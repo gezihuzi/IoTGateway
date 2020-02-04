@@ -40,6 +40,10 @@ namespace Waher.Networking.HTTP
 		/// Default HTTP Port (80).
 		/// </summary>
 		public const int DefaultHttpPort = 80;
+		/// <summary>
+		/// Default Service Registrar.
+		/// </summary>
+		public static IHttpNetServiceMethod NetServiceRegistrar = null;
 
 #if !WINDOWS_UWP          // SSL/TLS server-side certificates not implemented in UWP...
 		/// <summary>
@@ -374,6 +378,7 @@ namespace Waher.Networking.HTTP
 							{
 								Listener = new StreamSocketListener();
 								await Listener.BindServiceNameAsync(HttpPort.ToString(), SocketProtectionLevel.PlainSocket, Profile.NetworkAdapter);
+								NetServiceRegistrar.Register(Listener);
 								Listener.ConnectionReceived += Listener_ConnectionReceived;
 
 								this.listeners.AddLast(new KeyValuePair<StreamSocketListener, Guid>(Listener, Profile.NetworkAdapter.NetworkAdapterId));
@@ -600,7 +605,10 @@ namespace Waher.Networking.HTTP
 				this.listeners = null;
 
 				foreach (KeyValuePair<StreamSocketListener, Guid> Listener in Listeners)
+				{
+					NetServiceRegistrar.UnRegister(Listener.Key);
 					Listener.Key.Dispose();
+				}
 #else
 				LinkedList<KeyValuePair<TcpListener, bool>> Listeners = this.listeners;
 				this.listeners = null;
