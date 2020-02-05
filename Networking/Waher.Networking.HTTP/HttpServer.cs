@@ -63,7 +63,7 @@ namespace Waher.Networking.HTTP
 		/// <summary>
 		/// Service Registrar.
 		/// </summary>
-		private static INetServiceManager NetServiceManager;
+		public static INetServiceManager NetServiceManager { get; set; }
 
 #if WINDOWS_UWP
 		private LinkedList<KeyValuePair<StreamSocketListener, Guid>> listeners = new LinkedList<KeyValuePair<StreamSocketListener, Guid>>();
@@ -964,13 +964,6 @@ namespace Waher.Networking.HTTP
 
 		#endregion
 
-		/// <summary>
-		/// Set Service Registrar.
-		/// </summary>
-		public static void SetNetServiceManager(INetServiceManager manager)
-		{
-			NetServiceManager = manager;
-		}
 		#region Resources
 
 		/// <summary>
@@ -1510,17 +1503,17 @@ namespace Waher.Networking.HTTP
 			}
 		}
 
-		#endregion
+        #endregion
 
-		#region GET
+        #region GET
 
-		/// <summary>
-		/// Performs an internal GET operation.
-		/// </summary>
-		/// <param name="LocalUrl">Local URL</param>
-		/// <param name="Session">Session variables, if available, or null if not.</param>
-		/// <returns>Status Code, Content-Type and binary representation of resource, if available.</returns>
-		public async Task<Tuple<int, string, byte[]>> GET(string LocalUrl, Variables Session)
+        /// <summary>
+        /// Performs an internal GET operation.
+        /// </summary>
+        /// <param name="LocalUrl">Local URL</param>
+        /// <param name="Session">Session variables, if available, or null if not.</param>
+        /// <returns>Status Code, Content-Type and binary representation of resource, if available.</returns>
+        public async Task<Tuple<int, string, byte[]>> GET(string LocalUrl, Variables Session)
 		{
 			string ResourceName = LocalUrl;
 			int i = ResourceName.IndexOf('?');
