@@ -1,7 +1,7 @@
 ﻿using System;
 using Windows.Networking.Sockets;
 
-namespace Waher.Networking.HTTP.UWP
+namespace Waher.Networking.HTTP
 {
 	/// <summary>
 	/// NetService for server

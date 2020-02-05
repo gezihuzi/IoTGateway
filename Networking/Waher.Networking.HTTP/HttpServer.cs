@@ -60,6 +60,11 @@ namespace Waher.Networking.HTTP
 
 		private static readonly Variables globalVariables = new Variables();
 
+		/// <summary>
+		/// Default Service Registrar.
+		/// </summary>
+		public static INetServiceManager NetServiceManager = null;
+
 #if WINDOWS_UWP
 		private LinkedList<KeyValuePair<StreamSocketListener, Guid>> listeners = new LinkedList<KeyValuePair<StreamSocketListener, Guid>>();
 #else
@@ -374,6 +379,10 @@ namespace Waher.Networking.HTTP
 							{
 								Listener = new StreamSocketListener();
 								await Listener.BindServiceNameAsync(HttpPort.ToString(), SocketProtectionLevel.PlainSocket, Profile.NetworkAdapter);
+								if (NetServiceManager != null)
+								{
+									NetServiceManager.RegisterService(Listener);
+								}
 								Listener.ConnectionReceived += Listener_ConnectionReceived;
 
 								this.listeners.AddLast(new KeyValuePair<StreamSocketListener, Guid>(Listener, Profile.NetworkAdapter.NetworkAdapterId));
@@ -600,7 +609,13 @@ namespace Waher.Networking.HTTP
 				this.listeners = null;
 
 				foreach (KeyValuePair<StreamSocketListener, Guid> Listener in Listeners)
+				{
+					if (NetServiceManager != null)
+					{
+						NetServiceManager.UnregisterService(Listener.Key);
+					}
 					Listener.Key.Dispose();
+				}
 #else
 				LinkedList<KeyValuePair<TcpListener, bool>> Listeners = this.listeners;
 				this.listeners = null;
