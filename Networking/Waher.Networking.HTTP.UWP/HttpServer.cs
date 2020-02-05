@@ -43,7 +43,7 @@ namespace Waher.Networking.HTTP
 		/// <summary>
 		/// Default Service Registrar.
 		/// </summary>
-		public static IHttpNetServiceMethod NetServiceRegistrar = null;
+		public static INetServiceManager NetServiceManager = null;
 
 #if !WINDOWS_UWP          // SSL/TLS server-side certificates not implemented in UWP...
 		/// <summary>
@@ -378,7 +378,10 @@ namespace Waher.Networking.HTTP
 							{
 								Listener = new StreamSocketListener();
 								await Listener.BindServiceNameAsync(HttpPort.ToString(), SocketProtectionLevel.PlainSocket, Profile.NetworkAdapter);
-								NetServiceRegistrar.Register(Listener);
+								if (NetServiceManager != null)
+								{
+									NetServiceManager.RegisterService(Listener);
+								}
 								Listener.ConnectionReceived += Listener_ConnectionReceived;
 
 								this.listeners.AddLast(new KeyValuePair<StreamSocketListener, Guid>(Listener, Profile.NetworkAdapter.NetworkAdapterId));
@@ -606,7 +609,10 @@ namespace Waher.Networking.HTTP
 
 				foreach (KeyValuePair<StreamSocketListener, Guid> Listener in Listeners)
 				{
-					NetServiceRegistrar.UnRegister(Listener.Key);
+					if (NetServiceManager != null)
+					{
+						NetServiceManager.UnregisterService(Listener.Key);
+					}
 					Listener.Key.Dispose();
 				}
 #else

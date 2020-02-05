@@ -6,16 +6,16 @@ namespace Waher.Networking.HTTP
 	/// <summary>
 	/// NetService for server
 	/// </summary>
-	public interface IHttpNetServiceMethod
+	public interface INetServiceManager
 	{
 		/// <summary>
 		///  register service
 		/// </summary>
-		bool Register(StreamSocketListener listener);
+		bool RegisterService(StreamSocketListener listener);
 
 		/// <summary>
 		/// unregister service
 		/// </summary>
-		bool UnRegister(StreamSocketListener listener);
+		bool UnregisterService(StreamSocketListener listener);
 	}
 }
