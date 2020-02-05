@@ -61,9 +61,9 @@ namespace Waher.Networking.HTTP
 		private static readonly Variables globalVariables = new Variables();
 
 		/// <summary>
-		/// Default Service Registrar.
+		/// Service Registrar.
 		/// </summary>
-		public static INetServiceManager NetServiceManager = null;
+		private static INetServiceManager NetServiceManager;
 
 #if WINDOWS_UWP
 		private LinkedList<KeyValuePair<StreamSocketListener, Guid>> listeners = new LinkedList<KeyValuePair<StreamSocketListener, Guid>>();
@@ -964,6 +964,13 @@ namespace Waher.Networking.HTTP
 
 		#endregion
 
+		/// <summary>
+		/// Set Service Registrar.
+		/// </summary>
+		public static void SetNetServiceManager(INetServiceManager manager)
+		{
+			NetServiceManager = manager;
+		}
 		#region Resources
 
 		/// <summary>
