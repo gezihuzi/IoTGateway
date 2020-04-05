@@ -8,11 +8,11 @@ namespace Waher.Content.Markdown.Model
 {
 	internal class Block
 	{
-		private string[] rows;
-		private int[] positions;
+		private readonly string[] rows;
+		private readonly int[] positions;
 		private int indent;
-		private int start;
-		private int end;
+		private readonly int start;
+		private readonly int end;
 
 		public Block(string[] Rows, int[] Positions, int Indent)
 			: this(Rows, Positions, Indent, 0, Rows.Length - 1)
@@ -218,6 +218,7 @@ namespace Waher.Content.Markdown.Model
 			int[] PartPositions = new int[Columns];
 
 			TextAlignment[] Alignments = new TextAlignment[Columns];
+			string[] AlignmentDefinitions = new string[Columns];
 			bool Left;
 			bool Right;
 			int Diff;
@@ -237,6 +238,7 @@ namespace Waher.Content.Markdown.Model
 
 				Left = s.StartsWith(":");
 				Right = s.EndsWith(":");
+				AlignmentDefinitions[j] = s;
 
 				if (Left && Right)
 					Alignments[j] = TextAlignment.Center;
@@ -258,17 +260,21 @@ namespace Waher.Content.Markdown.Model
 				}
 			}
 
-			TableInformation = new TableInformation();
-			TableInformation.Columns = Columns;
-			TableInformation.NrHeaderRows = (UnderlineRow - this.start);
-			TableInformation.NrDataRows = End - UnderlineRow;
+			TableInformation = new TableInformation
+			{
+				Alignments = Alignments,
+				AlignmentDefinitions = AlignmentDefinitions,
+				Caption = Caption,
+				Columns = Columns,
+				Id = Id,
+				NrHeaderRows = (UnderlineRow - this.start),
+				NrDataRows = End - UnderlineRow
+			};
+
 			TableInformation.Headers = new string[TableInformation.NrHeaderRows][];
 			TableInformation.HeaderPositions = new int[TableInformation.NrHeaderRows][];
 			TableInformation.Rows = new string[TableInformation.NrDataRows][];
 			TableInformation.RowPositions = new int[TableInformation.NrDataRows][];
-			TableInformation.Alignments = Alignments;
-			TableInformation.Caption = Caption;
-			TableInformation.Id = Id;
 
 			for (i = 0; i < TableInformation.NrHeaderRows; i++)
 			{

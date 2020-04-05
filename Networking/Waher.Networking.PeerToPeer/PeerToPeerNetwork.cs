@@ -194,22 +194,23 @@ namespace Waher.Networking.PeerToPeer
 		{
 			try
 			{
-				while (!this.disposed)
+				while (!this.disposed && !(this.tcpListener is null))
 				{
 					try
 					{
-						TcpClient Client = await this.tcpListener.AcceptTcpClientAsync();
+						TcpClient TcpClient = await this.tcpListener.AcceptTcpClientAsync();
 						if (this.disposed)
 							return;
 
-						if (!(Client is null))
+						if (!(TcpClient is null))
 						{
 							PeerConnection Connection = null;
 
 							try
 							{
+								BinaryTcpClient Client = new BinaryTcpClient(TcpClient);
 								Connection = new PeerConnection(Client, this,
-									(IPEndPoint)Client.Client.RemoteEndPoint, this.encapsulatePackets);
+									(IPEndPoint)TcpClient.Client.RemoteEndPoint, this.encapsulatePackets);
 
 								this.State = PeerToPeerNetworkState.Ready;
 
@@ -308,7 +309,7 @@ namespace Waher.Networking.PeerToPeer
 		/// <param name="Registration">Registration to be performed.</param>
 		/// <param name="TcpPortMapped">What TCP Ports are already mapped.</param>
 		/// <param name="UdpPortMapped">What UDP Ports are already mapped.</param>
-		protected override void BeforeRegistration(InternetGatewayRegistration Registration, 
+		protected override void BeforeRegistration(InternetGatewayRegistration Registration,
 			Dictionary<ushort, bool> TcpPortMapped, Dictionary<ushort, bool> UdpPortMapped)
 		{
 			try
@@ -319,18 +320,13 @@ namespace Waher.Networking.PeerToPeer
 					this.tcpListener.Start(this.backlog);
 
 					int i = ((IPEndPoint)this.tcpListener.LocalEndpoint).Port;
-					Registration.LocalPort = (ushort)i;
-					if (Registration.ExternalPort == 0)
-						Registration.ExternalPort = Registration.LocalPort;
 
 					if (i < 0 || i > ushort.MaxValue ||
-						TcpPortMapped.ContainsKey((ushort)Registration.ExternalPort) || 
-						UdpPortMapped.ContainsKey((ushort)Registration.ExternalPort))
+						TcpPortMapped.ContainsKey((ushort)i) ||
+						UdpPortMapped.ContainsKey((ushort)i))
 					{
 						this.tcpListener.Stop();
 						this.tcpListener = null;
-
-						throw new ArgumentException("External port already assigned to another application in the network.", nameof(Registration));
 					}
 					else
 					{
@@ -338,6 +334,14 @@ namespace Waher.Networking.PeerToPeer
 						{
 							this.udpClient = new UdpClient(this.tcpListener.LocalEndpoint.AddressFamily);
 							this.udpClient.Client.Bind((IPEndPoint)this.tcpListener.LocalEndpoint);
+
+							Registration.LocalPort = (ushort)i;
+							if (Registration.ExternalPort == 0 ||
+								TcpPortMapped.ContainsKey((ushort)Registration.ExternalPort) ||
+								UdpPortMapped.ContainsKey((ushort)Registration.ExternalPort))
+							{
+								Registration.ExternalPort = Registration.LocalPort;
+							}
 						}
 						catch (Exception)
 						{
@@ -347,7 +351,7 @@ namespace Waher.Networking.PeerToPeer
 					}
 				}
 				while (this.tcpListener is null);
-
+			
 				this.localEndpoint = new IPEndPoint(this.localAddress, Registration.LocalPort);
 				this.externalEndpoint = new IPEndPoint(this.externalAddress, Registration.ExternalPort);
 
@@ -411,18 +415,18 @@ namespace Waher.Networking.PeerToPeer
 			if (this.State != PeerToPeerNetworkState.Ready)
 				throw new IOException("Peer-to-peer network not ready.");
 
-			TcpClient Client = new TcpClient();
-			IPEndPoint RemoteEndPoint2;
+			BinaryTcpClient Client = new BinaryTcpClient();
+			IPEndPoint RemoteEndPoint2 = RemoteEndPoint;
 
 			try
 			{
 				RemoteEndPoint2 = this.CheckLocalRemoteEndpoint(RemoteEndPoint);
 				await Client.ConnectAsync(RemoteEndPoint2.Address, RemoteEndPoint2.Port);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				Client.Dispose();
-				throw;
+				System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
 			}
 
 			PeerConnection Result = new PeerConnection(Client, this, RemoteEndPoint2, this.encapsulatePackets);

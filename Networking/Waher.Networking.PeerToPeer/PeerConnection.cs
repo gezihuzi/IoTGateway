@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
+using System.Threading.Tasks;
 using Waher.Events;
 
 namespace Waher.Networking.PeerToPeer
@@ -12,15 +12,10 @@ namespace Waher.Networking.PeerToPeer
 	/// </summary>
 	public class PeerConnection : IDisposable
 	{
-		private const int BufferSize = 65536;
-
-		private readonly byte[] incomingBuffer = new byte[BufferSize];
 		private byte[] packetBuffer = null;
-		private readonly LinkedList<QueuedItem> outgoingPackets = new LinkedList<QueuedItem>();
 		private readonly PeerToPeerNetwork network;
 		private IPEndPoint remoteEndpoint;
-		private TcpClient tcpConnection;
-		private NetworkStream stream;
+		private BinaryTcpClient tcpConnection;
 		private EventHandler resynchCallback;
 		private object stateObject = null;
 		private int readState = 0;
@@ -28,31 +23,130 @@ namespace Waher.Networking.PeerToPeer
 		private ushort outgoingPacketNumber = 0;
 		private int offset = 0;
 		private int packetPos = 0;
-		private bool writing = false;
 		private bool closed = false;
 		private bool disposed = false;
 		private readonly bool encapsulatePackets;
 
-		internal PeerConnection(TcpClient TcpConnection, PeerToPeerNetwork Network, IPEndPoint RemoteEndpoint,
+		internal PeerConnection(BinaryTcpClient TcpConnection, PeerToPeerNetwork Network, IPEndPoint RemoteEndpoint,
 			bool EncapsulatePackets)
 		{
 			this.network = Network;
 			this.remoteEndpoint = RemoteEndpoint;
 			this.tcpConnection = TcpConnection;
-			this.stream = this.tcpConnection.GetStream();
 			this.encapsulatePackets = EncapsulatePackets;
+
+			this.tcpConnection.OnDisconnected += TcpConnection_OnDisconnected;
+			this.tcpConnection.OnError += TcpConnection_OnError;
+			this.tcpConnection.OnReceived += TcpConnection_OnReceived;
+			this.tcpConnection.OnSent += TcpConnection_OnSent;
 		}
 
-		private class QueuedItem
+		private async Task TcpConnection_OnSent(object Sender, byte[] Buffer, int Offset, int Count)
 		{
-			public byte[] Packet;
-			public EventHandler Callback;
+			this.lastTcpPacket = DateTime.Now;
 
-			public QueuedItem(byte[] Packet, EventHandler Callback)
+			BinaryDataWrittenEventHandler h = this.OnSent;
+			if (!(h is null))
 			{
-				this.Packet = Packet;
-				this.Callback = Callback;
+				try
+				{
+					await h(this, Buffer, Offset, Count);
+				}
+				catch (Exception ex)
+				{
+					Log.Critical(ex);
+				}
 			}
+		}
+
+		private async Task<bool> TcpConnection_OnReceived(object Sender, byte[] Buffer, int Offset, int Count)
+		{
+			bool Continue = true;
+
+			this.lastTcpPacket = DateTime.Now;
+			this.resynchCallback = null;
+
+			if (this.encapsulatePackets)
+			{
+				int NrLeft;
+				byte b;
+				
+				while (Count-- > 0 && Continue && !this.disposed)
+				{
+					switch (this.readState)
+					{
+						case 0:
+							b = Buffer[Offset++];
+							this.packetSize |= (b & 127) << this.offset;
+							this.offset += 7;
+							if ((b & 128) == 0)
+							{
+								this.packetBuffer = new byte[this.packetSize];
+								this.packetPos = 0;
+								this.readState = 1;
+							}
+							break;
+
+						case 1:
+							NrLeft = Math.Min(Count, this.packetSize - this.packetPos);
+							Array.Copy(Buffer, Offset, this.packetBuffer, this.packetPos, NrLeft);
+							Offset += NrLeft;
+							this.packetPos += NrLeft;
+
+							if (this.packetPos >= this.packetSize)
+							{
+								Continue = await this.OnPacketReceived();
+
+								this.readState = 0;
+								this.packetSize = 0;
+								this.offset = 0;
+								this.packetBuffer = null;
+							}
+							break;
+
+						default:
+							Count = 0;
+							break;
+					}
+				}
+			}
+			else
+			{
+				this.packetSize = Count;
+				this.packetBuffer = new byte[Count];
+				Array.Copy(Buffer, Offset, this.packetBuffer, 0, Count);
+				Continue = await this.OnPacketReceived();
+			}
+
+			return Continue;
+		}
+
+		private async Task<bool> OnPacketReceived()
+		{
+			BinaryDataReadEventHandler h = this.OnReceived;
+			if (!(h is null))
+			{
+				try
+				{
+					return await h(this, this.packetBuffer, 0, this.packetSize);
+				}
+				catch (Exception ex)
+				{
+					Log.Critical(ex);
+				}
+			}
+		
+			return true;
+		}
+
+		private void TcpConnection_OnError(object Sender, Exception Exception)
+		{
+			this.Closed();
+		}
+
+		private void TcpConnection_OnDisconnected(object sender, EventArgs e)
+		{
+			this.Closed();
 		}
 
 		/// <summary>
@@ -74,13 +168,13 @@ namespace Waher.Networking.PeerToPeer
 			this.packetSize = 0;
 			this.offset = 0;
 			this.resynchCallback = ResynchCallback;
-			this.BeginReadTcp();
+			this.tcpConnection.Bind();
 		}
 
 		/// <summary>
 		/// Underlying TCP connection
 		/// </summary>
-		public TcpClient Tcp
+		public BinaryTcpClient Tcp
 		{
 			get { return this.tcpConnection; }
 		}
@@ -112,14 +206,8 @@ namespace Waher.Networking.PeerToPeer
 			this.idleTimer?.Dispose();
 			this.idleTimer = null;
 
-			if (this.tcpConnection != null)
-			{
-				this.stream?.Dispose();
-				this.stream = null;
-
-				this.tcpConnection.Dispose();
-				this.tcpConnection = null;
-			}
+			this.tcpConnection?.Dispose();
+			this.tcpConnection = null;
 
 			this.Closed();
 		}
@@ -140,83 +228,13 @@ namespace Waher.Networking.PeerToPeer
 		/// </summary>
 		/// <param name="Packet">Packet to send.</param>
 		/// <param name="Callback">Optional method to call when packet has been sent.</param>
-		public async void SendTcp(byte[] Packet, EventHandler Callback)
+		public void SendTcp(byte[] Packet, EventHandler Callback)
 		{
 			if (this.disposed)
 				return;
 
-			try
-			{
-				byte[] EncodedPacket = this.EncodePacket(Packet, false);
-
-				lock (this.outgoingPackets)
-				{
-					if (this.writing)
-					{
-						this.outgoingPackets.AddLast(new QueuedItem(EncodedPacket, Callback));
-						return;
-					}
-					else
-					{
-						this.writing = true;
-						this.lastTcpPacket = DateTime.Now;
-					}
-				}
-
-				while (EncodedPacket != null)
-				{
-					await this.stream.WriteAsync(EncodedPacket, 0, EncodedPacket.Length);
-					if (this.disposed)
-						return;
-
-					BinaryEventHandler h = this.OnSent;
-					if (h != null)
-					{
-						try
-						{
-							h(this, EncodedPacket);
-						}
-						catch (Exception ex)
-						{
-							Log.Critical(ex);
-						}
-					}
-
-					if (Callback != null)
-					{
-						try
-						{
-							Callback(this, new EventArgs());
-						}
-						catch (Exception ex)
-						{
-							Log.Critical(ex);
-						}
-					}
-
-					lock (this.outgoingPackets)
-					{
-						if (this.outgoingPackets.First != null)
-						{
-							QueuedItem Item = this.outgoingPackets.First.Value;
-							EncodedPacket = Item.Packet;
-							Callback = Item.Callback;
-
-							this.outgoingPackets.RemoveFirst();
-						}
-						else
-						{
-							this.writing = false;
-							EncodedPacket = null;
-							Callback = null;
-						}
-					}
-				}
-			}
-			catch (Exception)
-			{
-				this.Closed();
-			}
+			byte[] EncodedPacket = this.EncodePacket(Packet, false);
+			this.tcpConnection.SendAsync(EncodedPacket, Callback);
 		}
 
 		private byte[] EncodePacket(byte[] Packet, bool IncludePacketNumber)
@@ -224,7 +242,7 @@ namespace Waher.Networking.PeerToPeer
 			if (!this.encapsulatePackets)
 				return Packet;
 
-			ushort PacketNr = 0;
+			ushort PacketNr;
 			int i = Packet.Length;
 			int j = 0;
 			int c = 1;
@@ -330,127 +348,31 @@ namespace Waher.Networking.PeerToPeer
 		/// <summary>
 		/// Event raised when a packet has been sent.
 		/// </summary>
-		public event BinaryEventHandler OnSent = null;
+		public event BinaryDataWrittenEventHandler OnSent = null;
 
-		private async void BeginReadTcp()
+		/// <summary>
+		/// If reading has been paused.
+		/// </summary>
+		public bool Paused => this.tcpConnection.Paused;
+
+		/// <summary>
+		/// Continues a paused connection.
+		/// </summary>
+		public void Continue()
 		{
-			BinaryEventHandler h = null;
-			int Pos;
-			int NrLeft;
-			byte b;
-
-			try
-			{
-				while (!this.disposed)
-				{
-					int NrRead = await this.stream.ReadAsync(this.incomingBuffer, 0, BufferSize);
-					if (NrRead <= 0 || this.disposed)
-					{
-						this.Closed();
-						break;
-					}
-					else
-					{
-						this.lastTcpPacket = DateTime.Now;
-						this.resynchCallback = null;
-
-						if (this.encapsulatePackets)
-						{
-							Pos = 0;
-							while (Pos < NrRead)
-							{
-								switch (this.readState)
-								{
-									case 0:
-										b = this.incomingBuffer[Pos++];
-										this.packetSize |= (b & 127) << this.offset;
-										this.offset += 7;
-										if ((b & 128) == 0)
-										{
-											this.packetBuffer = new byte[this.packetSize];
-											this.packetPos = 0;
-											this.readState = 1;
-										}
-										break;
-
-									case 1:
-										NrLeft = NrRead - Pos;
-										if (NrLeft > this.packetSize - this.packetPos)
-											NrLeft = this.packetSize - this.packetPos;
-
-										Array.Copy(this.incomingBuffer, Pos, this.packetBuffer, this.packetPos, NrLeft);
-										Pos += NrLeft;
-										this.packetPos += NrLeft;
-
-										if (this.packetPos >= this.packetSize)
-										{
-											h = this.OnReceived;
-											if (h != null)
-											{
-												try
-												{
-													h(this, this.packetBuffer);
-												}
-												catch (Exception ex)
-												{
-													Log.Critical(ex);
-												}
-											}
-
-											this.readState = 0;
-											this.packetSize = 0;
-											this.offset = 0;
-											this.packetBuffer = null;
-										}
-										break;
-
-									default:
-										Pos = NrRead;
-										break;
-								}
-							}
-						}
-						else
-						{
-							this.packetSize = NrRead;
-							this.packetBuffer = new byte[this.packetSize];
-
-							Array.Copy(this.incomingBuffer, 0, this.packetBuffer, 0, NrRead);
-
-							h = this.OnReceived;
-							if (h != null)
-							{
-								try
-								{
-									h(this, this.packetBuffer);
-								}
-								catch (Exception ex)
-								{
-									Log.Critical(ex);
-								}
-							}
-						}
-					}
-				}
-			}
-			catch (Exception)
-			{
-				this.Closed();
-			}
+			this.tcpConnection.Continue();
 		}
 
 		/// <summary>
 		/// Event received when binary data has been received.
 		/// </summary>
-		public event BinaryEventHandler OnReceived = null;
+		public event BinaryDataReadEventHandler OnReceived = null;
 
 		private void Closed()
 		{
 			if (!this.closed)
 			{
 				this.closed = true;
-				this.writing = false;
-				this.outgoingPackets.Clear();
 
 				if (this.resynchCallback != null)
 				{
@@ -502,7 +424,7 @@ namespace Waher.Networking.PeerToPeer
 			set { this.stateObject = value; }
 		}
 
-		internal void UdpDatagramReceived(object Sender, UdpDatagramEventArgs e)
+		internal void UdpDatagramReceived(object _, UdpDatagramEventArgs e)
 		{
 			if (this.encapsulatePackets)
 			{
@@ -566,7 +488,7 @@ namespace Waher.Networking.PeerToPeer
 						this.lastReceivedPacket = FirstPacketNr;
 				}
 
-				BinaryEventHandler h = this.OnReceived;
+				BinaryDataReadEventHandler h = this.OnReceived;
 				if (h != null)
 				{
 					if (LostPackets != null)
@@ -575,7 +497,7 @@ namespace Waher.Networking.PeerToPeer
 						{
 							try
 							{
-								h(this, P.Value);
+								h(this, P.Value, 0, P.Value.Length);
 							}
 							catch (Exception ex)
 							{
@@ -588,7 +510,7 @@ namespace Waher.Networking.PeerToPeer
 					{
 						try
 						{
-							h(this, FirstPacket);
+							h(this, FirstPacket, 0, FirstPacket.Length);
 						}
 						catch (Exception ex)
 						{
@@ -605,12 +527,12 @@ namespace Waher.Networking.PeerToPeer
 
 				Array.Copy(Data, 0, Packet, 0, Len);
 
-				BinaryEventHandler h = this.OnReceived;
+				BinaryDataReadEventHandler h = this.OnReceived;
 				if (h != null)
 				{
 					try
 					{
-						h(this, Packet);
+						h(this, Packet, 0, Packet.Length);
 					}
 					catch (Exception ex)
 					{

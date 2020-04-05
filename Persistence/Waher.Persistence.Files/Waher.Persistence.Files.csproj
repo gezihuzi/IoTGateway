@@ -14,9 +14,9 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>persistence object database enryption file storage encryption</PackageTags>
     <NeutralLanguage>English</NeutralLanguage>
-    <AssemblyVersion>1.0.65</AssemblyVersion>
-    <FileVersion>1.0.65</FileVersion>
-    <Version>1.0.65</Version>
+    <AssemblyVersion>1.0.67</AssemblyVersion>
+    <FileVersion>1.0.67</FileVersion>
+    <Version>1.0.67</Version>
     <PackageIconUrl></PackageIconUrl>
     <FileUpgradeFlags>40</FileUpgradeFlags>
     <UpgradeBackupLocation>C:\My Projects\IoTGateway\Backup\Persistence\Waher.Persistence.Files\</UpgradeBackupLocation>
@@ -40,6 +40,7 @@
     <PackageReference Include="System.Xml.XmlDocument" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Events\Waher.Events\Waher.Events.csproj" />
     <ProjectReference Include="..\..\Runtime\Waher.Runtime.Cache\Waher.Runtime.Cache.csproj" />
     <ProjectReference Include="..\..\Runtime\Waher.Runtime.Inventory\Waher.Runtime.Inventory.csproj" />
     <ProjectReference Include="..\..\Runtime\Waher.Runtime.Threading\Waher.Runtime.Threading.csproj" />

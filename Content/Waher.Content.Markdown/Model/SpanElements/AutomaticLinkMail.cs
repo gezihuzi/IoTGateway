@@ -10,7 +10,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 	/// </summary>
 	public class AutomaticLinkMail : MarkdownElement
 	{
-		private string eMail;
+		private readonly string eMail;
 
 		/// <summary>
 		/// Inline HTML.
@@ -29,6 +29,17 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		public string EMail
 		{
 			get { return this.eMail; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append('<');
+			Output.Append(this.eMail);
+			Output.Append('>');
 		}
 
 		/// <summary>
@@ -116,5 +127,32 @@ namespace Waher.Content.Markdown.Model.SpanElements
 			Output.WriteAttributeString("eMail", this.eMail);
 			Output.WriteEndElement();
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is AutomaticLinkMail x &&
+				this.eMail == x.eMail &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.eMail?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
 	}
 }

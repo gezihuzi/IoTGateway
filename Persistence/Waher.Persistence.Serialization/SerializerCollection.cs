@@ -93,12 +93,9 @@ namespace Waher.Persistence.Serialization
 		{
 			if (!(this.serializers is null))
 			{
-				IDisposable d;
-
 				foreach (IObjectSerializer Serializer in this.serializers.Values)
 				{
-					d = Serializer as IDisposable;
-					if (!(d is null))
+					if (Serializer is IDisposable d)
 					{
 						try
 						{
@@ -117,6 +114,22 @@ namespace Waher.Persistence.Serialization
 
 			this.serializerAdded?.Dispose();
 			this.serializerAdded = null;
+		}
+
+		/// <summary>
+		/// Gets the object serializer corresponding to a specific type, if one exists.
+		/// </summary>
+		/// <param name="Type">Type of object to serialize.</param>
+		/// <returns>Object Serializer if exists, or null if not.</returns>
+		public IObjectSerializer GetObjectSerializerNoCreate(Type Type)
+		{
+			lock (this.synchObj)
+			{
+				if (this.serializers.TryGetValue(Type, out IObjectSerializer Result))
+					return Result;
+			}
+
+			return null;
 		}
 
 		/// <summary>

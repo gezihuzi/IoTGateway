@@ -2,7 +2,6 @@
 Description: Markdown syntax reference, as understood by the IoT Gateway.
 Date: 2016-02-11
 Author: Peter Waher
-Copyright: /Copyright.md
 Master: /Master.md
 
 Markdown syntax reference
@@ -396,6 +395,23 @@ This is transformed into:
 >	* Item 2
 >
 > etc.
+
+The `>` sign can be optionally prefixed by a `+` or a `-` sign to show the block has been
+inserted (`+`) or deleted(`-`). Example:
+
+	+> This paragraph has been added.
+
+	This paragraph is unchanged.
+
+	-> This paragraph has been deleted.
+
+This is transformed to:
+
++> This paragraph has been added.
+
+This paragraph is unchanged.
+
+-> This paragraph has been deleted.
 
 ### Bullet Lists
 
@@ -1079,8 +1095,8 @@ In your browser, this is displayed as:
 
 ![Cactus Rose][]
 	
-[Cactus Rose]: /Themes/WaherDataAB/CactusRose1600x1600.png 1600 1600
-	/Themes/WaherDataAB/CactusRose800x800.png 800 800
+[Cactus Rose]: /Themes/CactusRose/CactusRose1600x1600.png 1600 1600
+	/Themes/CactusRose/CactusRose800x800.png 800 800
 
 A short summary:
 
@@ -1210,7 +1226,7 @@ Script
 -----------------------------
 
 [Script](Script.md) can be used to make your markdown pages dynamic. The following sections describe different options. For more information
-about script, see the [Script reference](Script.md). You can also use the [Calculator](Calculator.md) to experiment with script syntax.
+about script, see the [Script reference](Script.md). You can also use the [Prompt](Prompt.md) to experiment with script syntax.
 
 ### Inline script
 

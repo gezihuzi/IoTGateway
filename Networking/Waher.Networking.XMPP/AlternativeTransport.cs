@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Waher.Runtime.Inventory;
 
 namespace Waher.Networking.XMPP
@@ -28,14 +29,27 @@ namespace Waher.Networking.XMPP
 		/// Sends a text packet.
 		/// </summary>
 		/// <param name="Packet">Text packet.</param>
-		public abstract void Send(string Packet);
+		public abstract Task<bool> SendAsync(string Packet);
 
 		/// <summary>
 		/// Sends a text packet.
 		/// </summary>
 		/// <param name="Packet">Text packet.</param>
 		/// <param name="DeliveryCallback">Optional method to call when packet has been delivered.</param>
-		public abstract void Send(string Packet, EventHandler DeliveryCallback);
+		public abstract Task<bool> SendAsync(string Packet, EventHandler DeliveryCallback);
+
+		/// <summary>
+		/// If the reading is paused.
+		/// </summary>
+		public abstract bool Paused
+		{
+			get;
+		}
+
+		/// <summary>
+		/// Call this method to continue operation. Operation can be paused, by returning false from <see cref="OnReceived"/>.
+		/// </summary>
+		public abstract void Continue();
 
 		/// <summary>
 		/// How well the alternative transport handles the XMPP credentials provided.

@@ -29,11 +29,11 @@
     <Property Id="ErrorIcon">error_icon</Property>
     <Property Id="QuestionIcon">question_icon</Property>
     <Directory Id='TARGETDIR' Name='SourceDir'>
-      <Merge Id="VCRedist" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.24.28127\MergeModules\Microsoft_VC142_CRT_x86.msm" DiskId="1" Language="0"/>
+      <Merge Id="VCRedist" SourceFile="C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Redist\MSVC\14.25.28508\MergeModules\Microsoft_VC142_CRT_x86.msm" DiskId="1" Language="0"/>
       <Directory Id='ProgramFilesFolder' Name='ProgramFiles'>
         <Directory Id='WaherDataAB' Name='Waher Data AB'>
           <Directory Id='INSTALLDIR' Name='IoT Gateway 1.0'>
-            <Component Id='InstallFolder' Guid='7853CEA7-FF91-4090-8F64-CCAC390BAD9C'>
+            <Component Id='InstallFolder' Guid='7853CEA7-FF91-4090-8F64-CCAC390BAD9C' KeyPath='yes'>
               <CreateFolder>
                 <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
               </CreateFolder>
@@ -143,6 +143,7 @@
               <File Id='System.Diagnostics.Contracts.dll' Name='System.Diagnostics.Contracts.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.Contracts.dll' Vital='yes'/>
               <File Id='System.Diagnostics.Debug.dll' Name='System.Diagnostics.Debug.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.Debug.dll' Vital='yes'/>
               <File Id='System.Diagnostics.DiagnosticSource.dll' Name='System.Diagnostics.DiagnosticSource.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.DiagnosticSource.dll' Vital='yes'/>
+              <File Id='System.Diagnostics.EventLog.dll' Name='System.Diagnostics.EventLog.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.EventLog.dll' Vital='yes'/>
               <File Id='System.Diagnostics.FileVersionInfo.dll' Name='System.Diagnostics.FileVersionInfo.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.FileVersionInfo.dll' Vital='yes'/>
               <File Id='System.Diagnostics.Process.dll' Name='System.Diagnostics.Process.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.Process.dll' Vital='yes'/>
               <File Id='System.Diagnostics.StackTrace.dll' Name='System.Diagnostics.StackTrace.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Diagnostics.StackTrace.dll' Vital='yes'/>
@@ -174,6 +175,7 @@
               <File Id='System.Linq.Expressions.dll' Name='System.Linq.Expressions.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Linq.Expressions.dll' Vital='yes'/>
               <File Id='System.Linq.Parallel.dll' Name='System.Linq.Parallel.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Linq.Parallel.dll' Vital='yes'/>
               <File Id='System.Linq.Queryable.dll' Name='System.Linq.Queryable.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Linq.Queryable.dll' Vital='yes'/>
+              <File Id='System.Memory.dll' Name='System.Memory.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Memory.dll' Vital='yes'/>
               <File Id='System.Net.dll' Name='System.Net.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Net.dll' Vital='yes'/>
               <File Id='System.Net.Http.dll' Name='System.Net.Http.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Net.Http.dll' Vital='yes'/>
               <File Id='System.Net.HttpListener.dll' Name='System.Net.HttpListener.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Net.HttpListener.dll' Vital='yes'/>
@@ -211,6 +213,7 @@
               <File Id='System.Resources.Reader.dll' Name='System.Resources.Reader.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Resources.Reader.dll' Vital='yes'/>
               <File Id='System.Resources.ResourceManager.dll' Name='System.Resources.ResourceManager.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Resources.ResourceManager.dll' Vital='yes'/>
               <File Id='System.Resources.Writer.dll' Name='System.Resources.Writer.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Resources.Writer.dll' Vital='yes'/>
+              <File Id='System.Runtime.CompilerServices.Unsafe.dll' Name='System.Runtime.CompilerServices.Unsafe.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Runtime.CompilerServices.Unsafe.dll' Vital='yes'/>
               <File Id='System.Runtime.CompilerServices.VisualC.dll' Name='System.Runtime.CompilerServices.VisualC.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Runtime.CompilerServices.VisualC.dll' Vital='yes'/>
               <File Id='System.Runtime.dll' Name='System.Runtime.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Runtime.dll' Vital='yes'/>
               <File Id='System.Runtime.Extensions.dll' Name='System.Runtime.Extensions.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Runtime.Extensions.dll' Vital='yes'/>
@@ -240,6 +243,7 @@
               <File Id='System.Security.SecureString.dll' Name='System.Security.SecureString.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Security.SecureString.dll' Vital='yes'/>
               <File Id='System.ServiceModel.Web.dll' Name='System.ServiceModel.Web.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.ServiceModel.Web.dll' Vital='yes'/>
               <File Id='System.ServiceProcess.dll' Name='System.ServiceProcess.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.ServiceProcess.dll' Vital='yes'/>
+              <File Id='System.ServiceProcess.ServiceController.dll' Name='System.ServiceProcess.ServiceController.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.ServiceProcess.ServiceController.dll' Vital='yes'/>
               <File Id='System.Text.Encoding.CodePages.dll' Name='System.Text.Encoding.CodePages.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Text.Encoding.CodePages.dll' Vital='yes'/>
               <File Id='System.Text.Encoding.dll' Name='System.Text.Encoding.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Text.Encoding.dll' Vital='yes'/>
               <File Id='System.Text.Encoding.Extensions.dll' Name='System.Text.Encoding.Extensions.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\System.Text.Encoding.Extensions.dll' Vital='yes'/>
@@ -292,6 +296,7 @@
               <RemoveFile Id='RemoveSystem.Diagnostics.Contracts.dll' Name='System.Diagnostics.Contracts.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Diagnostics.Debug.dll' Name='System.Diagnostics.Debug.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Diagnostics.DiagnosticSource.dll' Name='System.Diagnostics.DiagnosticSource.dll'  On='uninstall' />
+              <RemoveFile Id='RemoveSystem.Diagnostics.EventLog.dll' Name='System.Diagnostics.EventLog.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Diagnostics.FileVersionInfo.dll' Name='System.Diagnostics.FileVersionInfo.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Diagnostics.Process.dll' Name='System.Diagnostics.Process.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Diagnostics.StackTrace.dll' Name='System.Diagnostics.StackTrace.dll'  On='uninstall' />
@@ -323,6 +328,7 @@
               <RemoveFile Id='RemoveSystem.Linq.Expressions.dll' Name='System.Linq.Expressions.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Linq.Parallel.dll' Name='System.Linq.Parallel.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Linq.Queryable.dll' Name='System.Linq.Queryable.dll'  On='uninstall' />
+              <RemoveFile Id='RemoveSystem.Memory.dll' Name='System.Memory.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Net.dll' Name='System.Net.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Net.Http.dll' Name='System.Net.Http.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Net.HttpListener.dll' Name='System.Net.HttpListener.dll'  On='uninstall' />
@@ -360,6 +366,7 @@
               <RemoveFile Id='RemoveSystem.Resources.Reader.dll' Name='System.Resources.Reader.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Resources.ResourceManager.dll' Name='System.Resources.ResourceManager.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Resources.Writer.dll' Name='System.Resources.Writer.dll'  On='uninstall' />
+              <RemoveFile Id='RemoveSystem.Runtime.CompilerServices.Unsafe.dll' Name='System.Runtime.CompilerServices.Unsafe.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Runtime.CompilerServices.VisualC.dll' Name='System.Runtime.CompilerServices.VisualC.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Runtime.dll' Name='System.Runtime.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Runtime.Extensions.dll' Name='System.Runtime.Extensions.dll'  On='uninstall' />
@@ -389,6 +396,7 @@
               <RemoveFile Id='RemoveSystem.Security.SecureString.dll' Name='System.Security.SecureString.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.ServiceModel.Web.dll' Name='System.ServiceModel.Web.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.ServiceProcess.dll' Name='System.ServiceProcess.dll'  On='uninstall' />
+              <RemoveFile Id='RemoveSystem.ServiceProcess.ServiceController.dll' Name='System.ServiceProcess.ServiceController.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Text.Encoding.CodePages.dll' Name='System.Text.Encoding.CodePages.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Text.Encoding.dll' Name='System.Text.Encoding.dll'  On='uninstall' />
               <RemoveFile Id='RemoveSystem.Text.Encoding.Extensions.dll' Name='System.Text.Encoding.Extensions.dll'  On='uninstall' />
@@ -471,19 +479,23 @@
               <RemoveFile Id='RemoveWindowsBase.dll' Name='WindowsBase.dll' On='uninstall'/>
             </Component>
             <Component Id='ExternalLibraries' Guid='6545F5ED-1503-454E-9EB4-E211BF6E74B3'>
-							<File Id='SkiaSharp.dll' Name='SkiaSharp.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\SkiaSharp.dll' Vital='yes' KeyPath='yes'/>
-							<File Id='libSkiaSharp.dll' Name='libSkiaSharp.dll' DiskId='1' Source='..\..\..\Script\Waher.Script.Lab\Bin\Debug\libSkiaSharp.dll' Vital='yes'/>
-							<File Id='MongoDB.Driver.dll' Name='MongoDB.Driver.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Driver.dll' Vital='yes'/>
-							<File Id='MongoDB.Driver.Core.dll' Name='MongoDB.Driver.Core.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Driver.Core.dll' Vital='yes'/>
-							<File Id='MongoDB.Bson.dll' Name='MongoDB.Bson.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Bson.dll' Vital='yes'/>
-							<File Id='DnsClient.dll' Name='DnsClient.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\DnsClient.dll' Vital='yes'/>
-							<RemoveFile Id='RemoveSkiaSharp.dll' Name='SkiaSharp.dll' On='uninstall'/>
+              <File Id='DnsClient.dll' Name='DnsClient.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\DnsClient.dll' Vital='yes' KeyPath='yes'/>
+              <File Id='libSkiaSharp.dll' Name='libSkiaSharp.dll' DiskId='1' Source='..\..\..\Script\Waher.Script.Lab\Bin\Debug\libSkiaSharp.dll' Vital='yes'/>
+              <File Id='MongoDB.Bson.dll' Name='MongoDB.Bson.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Bson.dll' Vital='yes'/>
+              <File Id='MongoDB.Driver.dll' Name='MongoDB.Driver.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Driver.dll' Vital='yes'/>
+              <File Id='MongoDB.Driver.Core.dll' Name='MongoDB.Driver.Core.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Driver.Core.dll' Vital='yes'/>
+              <File Id='MongoDB.Libmongocrypt.dll' Name='MongoDB.Libmongocrypt.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\MongoDB.Libmongocrypt.dll' Vital='yes'/>
+              <File Id='SharpCompress.dll' Name='SharpCompress.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\SharpCompress.dll' Vital='yes'/>
+              <File Id='SkiaSharp.dll' Name='SkiaSharp.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\SkiaSharp.dll' Vital='yes'/>
+              <RemoveFile Id='RemoveDnsClient.dll' Name='DnsClient.dll' On='uninstall'/>
               <RemoveFile Id='RemovelibSkiaSharp.dll' Name='libSkiaSharp.dll' On='uninstall'/>
-							<RemoveFile Id='RemoveMongoDB.Driver.dll' Name='MongoDB.Driver.dll' On='uninstall'/>
-							<RemoveFile Id='RemoveMongoDB.Driver.Core.dll' Name='MongoDB.Driver.Core.dll' On='uninstall'/>
-							<RemoveFile Id='RemoveMongoDB.Bson.dll' Name='MongoDB.Bson.dll' On='uninstall'/>
-							<RemoveFile Id='DnsClient.dll' Name='DnsClient.dll' On='uninstall'/>
-						</Component>
+              <RemoveFile Id='RemoveMongoDB.Bson.dll' Name='MongoDB.Bson.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveMongoDB.Driver.dll' Name='MongoDB.Driver.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveMongoDB.Driver.Core.dll' Name='MongoDB.Driver.Core.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveMongoDB.Libmongocrypt.dll' Name='MongoDB.Libmongocrypt.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveSharpCompress.dll' Name='SharpCompress.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveSkiaSharp.dll' Name='SkiaSharp.dll' On='uninstall'/>
+            </Component>
             <Component Id='MainExecutable' Guid='4A7EDBB4-9F37-4115-93B6-1BCBECD06486'>
               <RegistryKey Root='HKLM' Key='Software\[Manufacturer]\[ProductName]'>
                 <RegistryValue Type='string' Name='InstallDir' Value='[INSTALLDIR]' Action='write'/>
@@ -550,8 +562,9 @@
 							<File Id='Waher.Runtime.Language.dll' Name='Waher.Runtime.Language.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Language.dll' Vital='yes'/>
 							<File Id='Waher.Runtime.ServiceRegistration.dll' Name='Waher.Runtime.ServiceRegistration.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.ServiceRegistration.dll' Vital='yes'/>
 							<File Id='Waher.Runtime.Settings.dll' Name='Waher.Runtime.Settings.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Settings.dll' Vital='yes'/>
-							<File Id='Waher.Runtime.Threading.dll' Name='Waher.Runtime.Threading.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Threading.dll' Vital='yes'/>
-							<File Id='Waher.Runtime.Timing.dll' Name='Waher.Runtime.Timing.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Timing.dll' Vital='yes'/>
+              <File Id='Waher.Runtime.Text.dll' Name='Waher.Runtime.Text.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Text.dll' Vital='yes'/>
+              <File Id='Waher.Runtime.Threading.dll' Name='Waher.Runtime.Threading.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Threading.dll' Vital='yes'/>
+              <File Id='Waher.Runtime.Timing.dll' Name='Waher.Runtime.Timing.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Runtime.Timing.dll' Vital='yes'/>
 							<File Id='Waher.Script.dll' Name='Waher.Script.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Script.dll' Vital='yes'/>
 							<File Id='Waher.Script.Content.dll' Name='Waher.Script.Content.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Script.Content.dll' Vital='yes'/>
 							<File Id='Waher.Script.Fractals.dll' Name='Waher.Script.Fractals.dll' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Waher.Script.Fractals.dll' Vital='yes'/>
@@ -636,8 +649,9 @@
 							<RemoveFile Id='RemoveWaher.Runtime.Language.dll' Name='Waher.Runtime.Language.dll' On='uninstall'/>
 							<RemoveFile Id='RemoveWaher.Runtime.ServiceRegistration.dll' Name='Waher.Runtime.ServiceRegistration.dll' On='uninstall'/>
 							<RemoveFile Id='RemoveWaher.Runtime.Settings.dll' Name='Waher.Runtime.Settings.dll' On='uninstall'/>
-							<RemoveFile Id='RemoveWaher.Runtime.Threading.dll' Name='Waher.Runtime.Threading.dll' On='uninstall'/>
-							<RemoveFile Id='RemoveWaher.Runtime.Timing.dll' Name='Waher.Runtime.Timing.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveWaher.Runtime.Text.dll' Name='Waher.Runtime.Text.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveWaher.Runtime.Threading.dll' Name='Waher.Runtime.Threading.dll' On='uninstall'/>
+              <RemoveFile Id='RemoveWaher.Runtime.Timing.dll' Name='Waher.Runtime.Timing.dll' On='uninstall'/>
 							<RemoveFile Id='RemoveWaher.Script.dll' Name='Waher.Script.dll' On='uninstall'/>
 							<RemoveFile Id='RemoveWaher.Script.Content.dll' Name='Waher.Script.Content.dll' On='uninstall'/>
 							<RemoveFile Id='RemoveWaher.Script.Fractals.dll' Name='Waher.Script.Fractals.dll' On='uninstall'/>
@@ -1196,7 +1210,7 @@
               </Component>
             </Directory>
             <Directory Id='InstallUtility' Name='InstallUtility'>
-              <Component Id='InstallUtilityFolder' Guid='C4400475-1681-4971-A5A1-AA30667F939C'>
+              <Component Id='InstallUtilityFolder' Guid='C4400475-1681-4971-A5A1-AA30667F939C' KeyPath='yes'>
                 <CreateFolder>
                   <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
                 </CreateFolder>
@@ -1208,18 +1222,24 @@
       <Directory Id='CommonAppDataFolder' Name='CommonAppData'>
         <Directory Id="APPDATADIR" Name="IoT Gateway">
           <Component Id="AppDataFolder" Guid="6F766315-8929-4754-81E0-3B16FA851887">
+            <CreateFolder>
+              <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+            </CreateFolder>
             <RegistryKey Root='HKLM' Key='Software\[Manufacturer]\[ProductName]'>
               <RegistryValue Type='string' Name='AppDataDir' Value='[APPDATADIR]' Action='write' KeyPath='yes'/>
             </RegistryKey>
           </Component>
           <Directory Id='ROOTDIR' Name='Root'>
             <Component Id='RootFiles' Guid='FAAC1B8A-39C9-4ABE-996D-0B7688990DC3'>
+              <CreateFolder>
+                <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+              </CreateFolder>
               <RegistryKey Root='HKLM' Key='Software\[Manufacturer]\[ProductName]'>
                 <RegistryValue Type='string' Name='RootDir' Value='[ROOTDIR]' Action='write'/>
               </RegistryKey>
               <RemoveFolder Id='RemoveRoot' On='uninstall' />
-							<File Id='Calculator.js' Name='Calculator.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Calculator.js' KeyPath='yes'/>
-              <File Id='Calculator.md' Name='Calculator.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Calculator.md'/>
+							<File Id='Prompt.js' Name='Prompt.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Prompt.js' KeyPath='yes'/>
+              <File Id='Prompt.md' Name='Prompt.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Prompt.md'/>
               <File Id='Copyright.md' Name='Copyright.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Copyright.md'/>
               <File Id='Emojis.md' Name='Emojis.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Emojis.md'/>
               <File Id='Entities.md' Name='Entities.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Entities.md'/>
@@ -1229,9 +1249,11 @@
 							<File Id='Markdown.md' Name='Markdown.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Markdown.md'/>
               <File Id='Master.md' Name='Master.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Master.md'/>
               <File Id='Script.md' Name='Script.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Script.md'/>
+              <File Id='SignatureRequest.js' Name='SignatureRequest.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\SignatureRequest.js' />
+              <File Id='SignatureRequest.md' Name='SignatureRequest.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\SignatureRequest.md' />
               <File Id='Smileys.md' Name='Smileys.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Smileys.md'/>
-							<RemoveFile Id='RemoveCalculator.js' Name='Calculator.js' On='uninstall'/>
-              <RemoveFile Id='RemoveCalculator.md' Name='Calculator.md' On='uninstall'/>
+							<RemoveFile Id='RemovePrompt.js' Name='Prompt.js' On='uninstall'/>
+              <RemoveFile Id='RemovePrompt.md' Name='Prompt.md' On='uninstall'/>
               <RemoveFile Id='RemoveCopyright.md' Name='Copyright.md' On='uninstall'/>
               <RemoveFile Id='RemoveEmojis.md' Name='Emojis.md' On='uninstall'/>
               <RemoveFile Id='RemoveEntities.md' Name='Entities.md' On='uninstall'/>
@@ -1241,10 +1263,15 @@
 							<RemoveFile Id='RemoveMarkdown.md' Name='Markdown.md' On='uninstall'/>
               <RemoveFile Id='RemoveMaster.md' Name='Master.md' On='uninstall'/>
               <RemoveFile Id='RemoveScript.md' Name='Script.md' On='uninstall'/>
+              <RemoveFile Id='RemoveSignatureRequest.js' Name='SignatureRequest.js' On='uninstall'/>
+              <RemoveFile Id='RemoveSignatureRequest.md' Name='SignatureRequest.md' On='uninstall'/>
               <RemoveFile Id='RemoveSmileys.md' Name='Smileys.md' On='uninstall'/>
             </Component>
             <Directory Id='Audio' Name='Audio'>
               <Component Id='AudioFiles' Guid='315A0BCE-D9DB-4BF9-B9CE-8E0D400D5A06'>
+                <CreateFolder>
+                  <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                </CreateFolder>
                 <RemoveFolder Id='RemoveAudio' On='uninstall' />
                 <File Id='glass_ping_Go445_1207030150.mp3' Name='glass_ping-Go445-1207030150.mp3' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Audio\glass_ping-Go445-1207030150.mp3' KeyPath='yes'/>
                 <File Id='glass_ping_Go445_1207030150.wav' Name='glass_ping-Go445-1207030150.wav' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Audio\glass_ping-Go445-1207030150.wav'/>
@@ -1255,7 +1282,10 @@
             <Directory Id='Images' Name='Images'>
               <Component Id='ImageFiles' Guid='66D950BA-6795-45CA-9943-38F483CA658B'>
                 <RemoveFolder Id='RemoveImages' On='uninstall' />
-								<File Id='logo_WaherDataAB_200x39.png' Name='logo-WaherDataAB-200x39.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Images\logo-WaherDataAB-200x39.png' KeyPath='yes'/>
+                <CreateFolder>
+                  <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                </CreateFolder>
+                <File Id='logo_WaherDataAB_200x39.png' Name='logo-WaherDataAB-200x39.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Images\logo-WaherDataAB-200x39.png' KeyPath='yes'/>
 								<File Id='logo_WaherDataAB_300x58.png' Name='logo-WaherDataAB-300x58.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Images\logo-WaherDataAB-300x58.png'/>
 								<File Id='logo_WaherDataAB_400x77.png' Name='logo-WaherDataAB-400x77.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Images\logo-WaherDataAB-400x77.png'/>
 								<File Id='logo_WaherDataAB_500x97.png' Name='logo-WaherDataAB-500x97.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Images\logo-WaherDataAB-500x97.png'/>
@@ -1267,7 +1297,10 @@
             </Directory>
 						<Directory Id='Settings' Name='Settings'>
 							<Component Id='SettingsFiles' Guid='13A2665D-91CB-45D3-9739-0236C82065FD'>
-								<RemoveFolder Id='SettingsFiles' On='uninstall' />
+                <CreateFolder>
+                  <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                </CreateFolder>
+                <RemoveFolder Id='SettingsFiles' On='uninstall' />
 								<File Id='Backup.js' Name='Backup.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Backup.js' KeyPath='yes'/>
 								<File Id='Backup.md' Name='Backup.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Backup.md'/>
 								<File Id='Config.cssx' Name='Config.cssx' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Config.cssx'/>
@@ -1276,14 +1309,19 @@
 								<File Id='Domain.js' Name='Domain.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Domain.js'/>
 								<File Id='Domain.md' Name='Domain.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Domain.md'/>
 								<File Id='Introduction.md' Name='Introduction.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Introduction.md'/>
-								<File Id='Notification.js' Name='Notification.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Notification.js'/>
+                <File Id='LegalIdentities.md' Name='LegalIdentities.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\LegalIdentities.md'/>
+                <File Id='LegalIdentity.js' Name='LegalIdentity.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\LegalIdentity.js'/>
+                <File Id='LegalIdentity.md' Name='LegalIdentity.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\LegalIdentity.md'/>
+                <File Id='Notification.js' Name='Notification.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Notification.js'/>
 								<File Id='Notification.md' Name='Notification.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Notification.md'/>
 								<File Id='PersonalData.js' Name='PersonalData.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\PersonalData.js'/>
 								<File Id='PersonalData.md' Name='PersonalData.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\PersonalData.md'/>
 								<File Id='Restore.js' Name='Restore.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Restore.js'/>
 								<File Id='Restore.md' Name='Restore.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Restore.md'/>
-								<File Id='SettingsMaster.md' Name='Master.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Master.md' />
-								<File Id='Next.js' Name='Next.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Next.js'/>
+                <File Id='Roster.js' Name='Roster.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Roster.js'/>
+                <File Id='Roster.md' Name='Roster.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Roster.md'/>
+                <File Id='SettingsMaster.md' Name='Master.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Master.md' />
+                <File Id='Next.js' Name='Next.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Next.js'/>
 								<File Id='Theme.js' Name='Theme.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Theme.js'/>
 								<File Id='Theme.md' Name='Theme.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Theme.md'/>
 								<File Id='XMPP.js' Name='XMPP.js' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\XMPP.js'/>
@@ -1296,14 +1334,19 @@
 								<RemoveFile Id='RemoveDomain.js' Name='Domain.js' On='uninstall'/>
 								<RemoveFile Id='RemoveDomain.md' Name='Domain.md' On='uninstall'/>
 								<RemoveFile Id='RemoveIntroduction.md' Name='Introduction.md' On='uninstall'/>
-								<RemoveFile Id='RemoveNotification.js' Name='Notification.js' On='uninstall'/>
+                <RemoveFile Id='RemoveLegalIdentities.md' Name='LegalIdentities.md' On='uninstall'/>
+                <RemoveFile Id='RemoveLegalIdentity.js' Name='LegalIdentity.js' On='uninstall'/>
+                <RemoveFile Id='RemoveLegalIdentity.md' Name='LegalIdentity.md' On='uninstall'/>
+                <RemoveFile Id='RemoveNotification.js' Name='Notification.js' On='uninstall'/>
 								<RemoveFile Id='RemoveNotification.md' Name='Notification.md' On='uninstall'/>
 								<RemoveFile Id='RemovePersonalData.js' Name='PersonalData.js' On='uninstall'/>
 								<RemoveFile Id='RemovePersonalData.md' Name='PersonalData.md' On='uninstall'/>
 								<RemoveFile Id='RemoveRestore.js' Name='Restore.js' On='uninstall'/>
 								<RemoveFile Id='RemoveRestore.md' Name='Restore.md' On='uninstall'/>
-								<RemoveFile Id='RemoveSettingsMaster.md' Name='Master.md' On='uninstall'/>
-								<RemoveFile Id='RemoveNext.js' Name='Next.js' On='uninstall'/>
+                <RemoveFile Id='RemoveRoster.js' Name='Roster.js' On='uninstall'/>
+                <RemoveFile Id='RemoveRoster.md' Name='Roster.md' On='uninstall'/>
+                <RemoveFile Id='RemoveSettingsMaster.md' Name='Master.md' On='uninstall'/>
+                <RemoveFile Id='RemoveNext.js' Name='Next.js' On='uninstall'/>
 								<RemoveFile Id='RemoveTheme.js' Name='Theme.js' On='uninstall'/>
 								<RemoveFile Id='RemoveTheme.md' Name='Theme.md' On='uninstall'/>
 								<RemoveFile Id='RemoveXMPP.js' Name='XMPP.js' On='uninstall'/>
@@ -1311,14 +1354,20 @@
 							</Component>
 							<Directory Id='Database' Name='Database'>
 								<Component Id='DatabaseFiles' Guid='1F5D29D1-7E5F-425E-BD02-151A6B117F3D'>
-									<RemoveFolder Id='RemoveDatabase' On='uninstall' />
+                  <CreateFolder>
+                    <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                  </CreateFolder>
+                  <RemoveFolder Id='RemoveDatabase' On='uninstall' />
 									<File Id='MongoDB.md' Name='MongoDB.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\Database\MongoDB.md' Vital='yes' KeyPath='yes'/>
 									<RemoveFile Id='RemoveMongoDB.md' Name='MongoDB.md' On='uninstall'/>
 								</Component>
 							</Directory>
 							<Directory Id='PersonalData' Name='PersonalData'>
 								<Component Id='PersonalDataFiles' Guid='4C73E63A-EA2B-4BE9-9DFA-228538513FA2'>
-									<RemoveFolder Id='RemovePersonalData' On='uninstall' />
+                  <CreateFolder>
+                    <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                  </CreateFolder>
+                  <RemoveFolder Id='RemovePersonalData' On='uninstall' />
 									<File Id='PiiBackups.md' Name='Backups.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\PersonalData\Backups.md' Vital='yes' KeyPath='yes'/>
 									<File Id='PiiLocalDatabase.md' Name='LocalDatabase.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\PersonalData\LocalDatabase.md'/>
 									<File Id='PiiLocalSensorsAndDevices.md' Name='LocalSensorsAndDevices.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Settings\PersonalData\LocalSensorsAndDevices.md'/>
@@ -1334,6 +1383,9 @@
 						</Directory>
 						<Directory Id='Templates' Name='Templates'>
               <Component Id='TemplateFiles' Guid='627A90AF-D6C1-41B1-814A-043B7B626E98'>
+                <CreateFolder>
+                  <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                </CreateFolder>
                 <RemoveFolder Id='RemoveTemplates' On='uninstall' />
                 <File Id='Repeat.md' Name='Repeat.md' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Templates\Repeat.md' KeyPath='yes'/>
                 <RemoveFile Id='RemoveRepeat.md' Name='Repeat.md' On='uninstall'/>
@@ -1342,7 +1394,10 @@
 						<Directory Id='Themes' Name='Themes'>
 							<Directory Id='CactusRose' Name='CactusRose'>
 								<Component Id='CactusRoseFiles' Guid='3FA99AE1-D6B0-486E-B5E6-8CFC05ECA306'>
-									<RemoveFolder Id='RemoveCactusRose' On='uninstall' />
+                  <CreateFolder>
+                    <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                  </CreateFolder>
+                  <RemoveFolder Id='RemoveCactusRose' On='uninstall' />
 									<File Id='CactusRose.cssx' Name='CactusRose.cssx' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\CactusRose\CactusRose.cssx'/>
 									<File Id='CactusRose.xml' Name='CactusRose.xml' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\CactusRose\CactusRose.xml'/>
 									<File Id='CactusRose.png' Name='CactusRose.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\CactusRose\CactusRose.png'/>
@@ -1367,7 +1422,10 @@
 							</Directory>
 							<Directory Id='GothicPeacock' Name='GothicPeacock'>
 								<Component Id='GothicPeacockFiles' Guid='C00E2CC5-8FBC-4390-B77D-7428A499557A'>
-									<RemoveFolder Id='RemoveGothicPeacock' On='uninstall' />
+                  <CreateFolder>
+                    <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                  </CreateFolder>
+                  <RemoveFolder Id='RemoveGothicPeacock' On='uninstall' />
 									<File Id='GothicPeacock.cssx' Name='GothicPeacock.cssx' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\GothicPeacock\GothicPeacock.cssx'/>
 									<File Id='GothicPeacock.xml' Name='GothicPeacock.xml' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\GothicPeacock\GothicPeacock.xml'/>
 									<File Id='GothicPeacock.png' Name='GothicPeacock.png' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Themes\GothicPeacock\GothicPeacock.png'/>
@@ -1393,6 +1451,9 @@
 						</Directory>
             <Directory Id='Video' Name='Video'>
               <Component Id='VideoFiles' Guid='B9D37E9B-7288-43E3-87A1-E04E3EEA9BFB'>
+                <CreateFolder>
+                  <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+                </CreateFolder>
                 <RemoveFolder Id='RemoveVideo' On='uninstall' />
                 <File Id='small.3gp' Name='small.3gp' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Video\small.3gp' KeyPath='yes'/>
                 <File Id='small.flv' Name='small.flv' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Root\Video\small.flv'/>
@@ -1409,23 +1470,31 @@
           </Directory>
           <Directory Id='Transforms' Name='Transforms'>
             <Component Id='TransformFiles' Guid='14F7FAEC-E30A-457A-86A3-B107D7810E19'>
+              <CreateFolder>
+                <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+              </CreateFolder>
               <RemoveFolder Id='RemoveTransforms' On='uninstall' />
 							<File Id='ClockStatXmlToCsv.xslt' Name='ClockStatXmlToCsv.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\ClockStatXmlToCsv.xslt' KeyPath='yes'/>
 							<File Id='ClockStatXmlToHtml.xslt' Name='ClockStatXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\ClockStatXmlToHtml.xslt'/>
 							<File Id='ClockStatXmlToTsv.xslt' Name='ClockStatXmlToTsv.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\ClockStatXmlToTsv.xslt'/>
-							<File Id='DbStatXmlToHtml.xslt' Name='DbStatXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\DbStatXmlToHtml.xslt'/>
-							<File Id='EventXmlToHtml.xslt' Name='EventXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\EventXmlToHtml.xslt'/>
+              <File Id='ContractToMarkdown.xslt' Name='ContractToMarkdown.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\ContractToMarkdown.xslt'/>
+              <File Id='DbStatXmlToHtml.xslt' Name='DbStatXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\DbStatXmlToHtml.xslt'/>
+              <File Id='EventXmlToHtml.xslt' Name='EventXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\EventXmlToHtml.xslt'/>
               <File Id='SnifferXmlToHtml.xslt' Name='SnifferXmlToHtml.xslt' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Transforms\SnifferXmlToHtml.xslt'/>
 							<RemoveFile Id='RemoveClockStatXmlToCsv.xslt' Name='ClockStatXmlToCsv.xslt' On='uninstall'/>
 							<RemoveFile Id='RemoveClockStatXmlToHtml.xslt' Name='ClockStatXmlToHtml.xslt' On='uninstall'/>
 							<RemoveFile Id='RemoveClockStatXmlToTsv.xslt' Name='ClockStatXmlToTsv.xslt' On='uninstall'/>
-							<RemoveFile Id='RemoveDbStatXmlToHtml.xslt' Name='DbStatXmlToHtml.xslt' On='uninstall'/>
-							<RemoveFile Id='RemoveEventXmlToHtml.xslt' Name='EventXmlToHtml.xslt' On='uninstall'/>
+              <RemoveFile Id='RemoveContractToMarkdown.xslt' Name='ContractToMarkdown.xslt' On='uninstall'/>
+              <RemoveFile Id='RemoveDbStatXmlToHtml.xslt' Name='DbStatXmlToHtml.xslt' On='uninstall'/>
+              <RemoveFile Id='RemoveEventXmlToHtml.xslt' Name='EventXmlToHtml.xslt' On='uninstall'/>
 							<RemoveFile Id='RemoveSnifferXmlToHtml.xslt' Name='SnifferXmlToHtml.xslt' On='uninstall'/>
 						</Component>
           </Directory>
           <Directory Id='Language' Name='Language'>
             <Component Id='English' Guid='531257BB-A840-4D96-85CA-F7A5C77AD546'>
+              <CreateFolder>
+                <util:PermissionEx GenericAll='yes' User='NT AUTHORITY\LocalService'/>
+              </CreateFolder>
               <RemoveFolder Id='RemoveEnglish' On='uninstall' />
               <File Id='Waher.IoTGateway.en.lng' Name='Waher.IoTGateway.en.lng' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Language\Waher.IoTGateway.en.lng' Vital='yes' KeyPath='yes'/>
               <File Id='Waher.Networking.XMPP.Concentrator.en.lng' Name='Waher.Networking.XMPP.Concentrator.en.lng' DiskId='1' Source='..\..\..\Waher.IoTGateway.Svc\bin\$(var.Configuration)\PublishOutput\Language\Waher.Networking.XMPP.Concentrator.en.lng'/>

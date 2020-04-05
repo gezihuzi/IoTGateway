@@ -26,16 +26,16 @@ namespace Waher.Content
 		private static IContentDecoder[] decoders = null;
 		private static IContentConverter[] converters = null;
 		private static IContentGetter[] getters = null;
-		private static Dictionary<string, KeyValuePair<Grade, IContentDecoder>> decoderByContentType =
+		private readonly static Dictionary<string, KeyValuePair<Grade, IContentDecoder>> decoderByContentType =
 			new Dictionary<string, KeyValuePair<Grade, IContentDecoder>>(StringComparer.CurrentCultureIgnoreCase);
-		private static Dictionary<string, string> contentTypeByFileExtensions = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
-		private static Dictionary<string, IContentConverter> convertersByStep = new Dictionary<string, IContentConverter>(StringComparer.CurrentCultureIgnoreCase);
-		private static Dictionary<string, List<IContentConverter>> convertersByFrom = new Dictionary<string, List<IContentConverter>>();
-		private static Dictionary<string, IContentGetter[]> gettersByScheme = new Dictionary<string, IContentGetter[]>(StringComparer.CurrentCultureIgnoreCase);
+		private readonly static Dictionary<string, string> contentTypeByFileExtensions = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
+		private readonly static Dictionary<string, IContentConverter> convertersByStep = new Dictionary<string, IContentConverter>(StringComparer.CurrentCultureIgnoreCase);
+		private readonly static Dictionary<string, List<IContentConverter>> convertersByFrom = new Dictionary<string, List<IContentConverter>>();
+		private readonly static Dictionary<string, IContentGetter[]> gettersByScheme = new Dictionary<string, IContentGetter[]>(StringComparer.CurrentCultureIgnoreCase);
 
 		static InternetContent()
 		{
-			Types.OnInvalidated += new EventHandler(Types_OnInvalidated);
+			Types.OnInvalidated += Types_OnInvalidated;
 		}
 
 		private static void Types_OnInvalidated(object sender, EventArgs e)
@@ -203,7 +203,7 @@ namespace Waher.Content
 		/// <exception cref="ArgumentException">If the object cannot be encoded.</exception>
 		public static byte[] Encode(object Object, Encoding Encoding, out string ContentType, params string[] AcceptedContentTypes)
 		{
-			if (!Encodes(Object, out Grade Grade, out IContentEncoder Encoder, AcceptedContentTypes))
+			if (!Encodes(Object, out Grade _, out IContentEncoder Encoder, AcceptedContentTypes))
 				throw new ArgumentException("No encoder found to encode objects of type " + (Object?.GetType()?.FullName) + ".", nameof(Object));
 
 			return Encoder.Encode(Object, Encoding, out ContentType);
@@ -229,7 +229,7 @@ namespace Waher.Content
 		/// <param name="AcceptedContentTypes">Optional array of accepted content types. If array is empty, all content types are accepted.</param>
 		public static bool IsAccepted(string[] ContentTypes, params string[] AcceptedContentTypes)
 		{
-			return IsAccepted(ContentTypes, out string ContentType, AcceptedContentTypes);
+			return IsAccepted(ContentTypes, out string _, AcceptedContentTypes);
 		}
 
 		/// <summary>
@@ -411,7 +411,7 @@ namespace Waher.Content
 		/// <exception cref="ArgumentException">If the object cannot be decoded.</exception>
 		public static object Decode(string ContentType, byte[] Data, Encoding Encoding, KeyValuePair<string, string>[] Fields, Uri BaseUri)
 		{
-			if (!Decodes(ContentType, out Grade Grade, out IContentDecoder Decoder))
+			if (!Decodes(ContentType, out Grade _, out IContentDecoder Decoder))
 				throw new ArgumentException("No decoder found to decode objects of type " + ContentType + ".", nameof(ContentType));
 
 			return Decoder.Decode(ContentType, Data, Encoding, Fields, BaseUri);
@@ -923,6 +923,21 @@ namespace Waher.Content
 				throw new ArgumentException("URI Scheme not recognized: " + Uri.Scheme, nameof(Uri));
 
 			return Getter.GetAsync(Uri, Headers);
+		}
+
+		/// <summary>
+		/// Gets a (possibly big) resource, given its URI.
+		/// </summary>
+		/// <param name="Uri">Uniform resource identifier.</param>
+		/// <param name="TimeoutMs">Timeout, in milliseconds. (Default=60000)</param>
+		/// <param name="Headers">Optional headers. Interpreted in accordance with the corresponding URI scheme.</param>
+		/// <returns>Content-Type, together with a Temporary file, if resource has been downloaded, or null if resource is data-less.</returns>
+		public static Task<KeyValuePair<string, TemporaryFile>> GetTempFileAsync(Uri Uri, int TimeoutMs, params KeyValuePair<string, string>[] Headers)
+		{
+			if (!CanGet(Uri, out Grade _, out IContentGetter Getter))
+				throw new ArgumentException("URI Scheme not recognized: " + Uri.Scheme, nameof(Uri));
+
+			return Getter.GetTempFileAsync(Uri, TimeoutMs, Headers);
 		}
 
 		#endregion

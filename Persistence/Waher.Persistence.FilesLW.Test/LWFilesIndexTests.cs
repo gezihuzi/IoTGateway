@@ -48,7 +48,11 @@ namespace Waher.Persistence.FilesLW.Test
         {
             DBFilesBTreeTests.DeleteFiles();
 
+#if LW
+            this.provider = new FilesProvider(DBFilesBTreeTests.Folder, DBFilesBTreeTests.CollectionName, BlockSize, BlocksInCache, Math.Max(BlockSize / 2, 1024), Encoding.UTF8, 10000);
+#else
             this.provider = new FilesProvider(DBFilesBTreeTests.Folder, DBFilesBTreeTests.CollectionName, BlockSize, BlocksInCache, Math.Max(BlockSize / 2, 1024), Encoding.UTF8, 10000, true);
+#endif
             this.file = await this.provider.GetFile(DBFilesBTreeTests.CollectionName);
 
             this.index1 = await this.provider.GetIndexFile(this.file, RegenerationOptions.DontRegenerate, "Byte", "-DateTime");
@@ -82,9 +86,9 @@ namespace Waher.Persistence.FilesLW.Test
             SortedDictionary<Guid, Simple> Objects = await this.CreateObjects(ObjectsToEnumerate);
             SortedDictionary<Guid, bool> Objects2 = new SortedDictionary<Guid, bool>();
             SortedDictionary<Guid, bool> Objects3 = new SortedDictionary<Guid, bool>();
-            GenericObject Prev = null;
+            Simple Prev = null;
 
-            foreach (GenericObject Obj in this.index1)
+            foreach (Simple Obj in this.index1)
             {
                 Objects2[Obj.ObjectId] = true;
                 Objects3[Obj.ObjectId] = true;
@@ -99,7 +103,7 @@ namespace Waher.Persistence.FilesLW.Test
             AssertEx.Same(0, Objects.Count);
 
             Prev = null;
-            foreach (GenericObject Obj in this.index2)
+            foreach (Simple Obj in this.index2)
             {
                 if (Prev != null)
                     AssertEx.Less(this.Index2Compare(Prev, Obj), 0);
@@ -111,7 +115,7 @@ namespace Waher.Persistence.FilesLW.Test
             AssertEx.Same(0, Objects2.Count);
 
             Prev = null;
-            foreach (GenericObject Obj in this.index3)
+            foreach (Simple Obj in this.index3)
             {
                 if (Prev != null)
                     AssertEx.Less(this.Index3Compare(Prev, Obj), 0);

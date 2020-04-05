@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using Waher.Events;
 using Waher.Networking.Sniffers;
 using Waher.Security;
@@ -58,21 +59,17 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 	/// </summary>
 	public class Socks5Client : Sniffable, IDisposable
 	{
-		private const int BufferSize = 65536;
-
-		private TcpClient client;
-		private NetworkStream stream = null;
+		private BinaryTcpClient client;
 		private Socks5State state = Socks5State.Offline;
-		private LinkedList<byte[]> queue = new LinkedList<byte[]>();
+		private readonly object synchObj = new object();
 		private readonly string host;
 		private readonly int port;
 		private readonly string jid;
-		private byte[] inputBuffer;
-		private bool isWriting = false;
 		private bool closeWhenDone = false;
 		private bool disposed = false;
 		private object callbackState;
 		private object tag = null;
+		private bool isWriting = false;
 
 		/// <summary>
 		/// Client used for SOCKS5 communication.
@@ -91,8 +88,7 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 			this.State = Socks5State.Connecting;
 			this.Information("Connecting to " + this.host + ":" + this.port.ToString());
 
-			this.client = new TcpClient();
-
+			this.client = new BinaryTcpClient();
 			this.Connect();
 		}
 
@@ -100,18 +96,20 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 		{
 			try
 			{
+				this.client.OnReceived += this.Client_OnReceived;
+				this.client.OnSent += this.Client_OnSent;
+				this.client.OnError += this.Client_OnError;
+				this.client.OnDisconnected += this.Client_OnDisconnected;
+				this.client.OnWriteQueueEmpty += this.Client_OnWriteQueueEmpty;
+
 				await this.client.ConnectAsync(this.host, this.port);
 				if (this.disposed)
 					return;
 
 				this.Information("Connected to " + this.host + ":" + this.port.ToString());
 
-				this.stream = this.client.GetStream();
-				this.inputBuffer = new byte[BufferSize];
-				this.Read();
-
 				this.state = Socks5State.Initializing;
-				this.SendPacket(new byte[] { 5, 1, 0 });
+				await this.SendPacket(new byte[] { 5, 1, 0 });
 			}
 			catch (Exception ex)
 			{
@@ -120,30 +118,26 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 			}
 		}
 
-		private async void Read()
+		private void Client_OnWriteQueueEmpty(object sender, EventArgs e)
 		{
-			try
+			bool DoDispose;
+
+			lock (this.synchObj)
 			{
-				while (!this.disposed)
+				this.isWriting = false;
+				DoDispose = this.closeWhenDone;
+			}
+
+			if (DoDispose)
+				this.Dispose();
+			else
+			{
+				EventHandler h = this.OnWriteQueueEmpty;
+				if (h != null)
 				{
-					int NrRead = await this.stream.ReadAsync(this.inputBuffer, 0, BufferSize);
-					if (this.disposed)
-						break;
-
-					if (NrRead <= 0)
-					{
-						this.State = Socks5State.Offline;
-						break;
-					}
-
-					byte[] Bin = new byte[NrRead];
-					Array.Copy(this.inputBuffer, 0, Bin, 0, NrRead);
-
-					this.ReceiveBinary(Bin);
-
 					try
 					{
-						this.ParseIncoming(Bin);
+						h(this, e);
 					}
 					catch (Exception ex)
 					{
@@ -151,10 +145,41 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 					}
 				}
 			}
+		}
+
+		private void Client_OnDisconnected(object sender, EventArgs e)
+		{
+			this.State = Socks5State.Offline;
+		}
+
+		private void Client_OnError(object Sender, Exception Exception)
+		{
+			this.State = Socks5State.Error;
+		}
+
+		private Task Client_OnSent(object Sender, byte[] Buffer, int Offset, int Count)
+		{
+			if (this.HasSniffers)
+				this.TransmitBinary(BinaryTcpClient.ToArray(Buffer, Offset, Count));
+
+			return Task.FromResult<bool>(true);
+		}
+
+		private Task<bool> Client_OnReceived(object Sender, byte[] Buffer, int Offset, int Count)
+		{
+			if (this.HasSniffers)
+				this.ReceiveBinary(BinaryTcpClient.ToArray(Buffer, Offset, Count));
+
+			try
+			{
+				this.ParseIncoming(Buffer, Offset, Count);
+			}
 			catch (Exception ex)
 			{
 				Log.Critical(ex);
 			}
+
+			return Task.FromResult<bool>(true);
 		}
 
 		/// <summary>
@@ -235,26 +260,13 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 		/// </summary>
 		public void Dispose()
 		{
-			this.disposed = true;
-			this.State = Socks5State.Offline;
-
-			if (this.stream != null)
+			if (!this.disposed)
 			{
-				this.stream.Flush();
-				this.stream.Dispose();
-				this.stream = null;
-			}
+				this.disposed = true;
+				this.State = Socks5State.Offline;
 
-			if (this.client != null)
-			{
-				this.client.Dispose();
+				this.client?.Dispose();
 				this.client = null;
-			}
-
-			if (this.queue != null)
-			{
-				this.queue.Clear();
-				this.queue = null;
 			}
 		}
 
@@ -262,76 +274,23 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 		/// Send binary data.
 		/// </summary>
 		/// <param name="Data">Data</param>
-		public void Send(byte[] Data)
+		/// <returns>If data was sent.</returns>
+		public Task<bool> Send(byte[] Data)
 		{
 			if (this.state != Socks5State.Connected)
 				throw new IOException("SOCKS5 connection not open.");
 
-			this.SendPacket(Data);
+			return this.SendPacket(Data);
 		}
 
-		private async void SendPacket(byte[] Data)
+		private Task<bool> SendPacket(byte[] Data)
 		{
-			try
+			lock (this.synchObj)
 			{
-				Data = (byte[])Data.Clone();
-
-				lock (this.queue)
-				{
-					if (this.isWriting)
-					{
-						this.queue.AddLast(Data);
-						return;
-					}
-					else
-						this.isWriting = true;
-				}
-
-				while (Data != null)
-				{
-					this.TransmitBinary(Data);
-					await this.stream.WriteAsync(Data, 0, Data.Length);
-					if (this.disposed || this.state == Socks5State.Offline)
-						return;
-
-					lock (this.queue)
-					{
-						if (this.queue.First is null)
-						{
-							this.isWriting = false;
-							Data = null;
-						}
-						else
-						{
-							Data = this.queue.First.Value;
-							this.queue.RemoveFirst();
-						}
-					}
-				}
-
-				if (this.closeWhenDone)
-					this.Dispose();
-				else
-				{
-					EventHandler h = this.OnWriteQueueEmpty;
-					if (h != null)
-					{
-						try
-						{
-							h(this, new EventArgs());
-						}
-						catch (Exception ex)
-						{
-							Log.Critical(ex);
-						}
-					}
-				}
+				this.isWriting = true;
 			}
-			catch (Exception ex)
-			{
-				this.State = Socks5State.Offline;
-				Log.Critical(ex);
-			}
+
+			return this.client.SendAsync(Data);
 		}
 
 		/// <summary>
@@ -344,7 +303,7 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 		/// </summary>
 		public void CloseWhenDone()
 		{
-			lock (this.queue)
+			lock (this.synchObj)
 			{
 				if (this.isWriting)
 				{
@@ -356,7 +315,7 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 			this.Dispose();
 		}
 
-		private void ParseIncoming(byte[] Data)
+		private void ParseIncoming(byte[] Buffer, int Offset, int Count)
 		{
 			if (this.state == Socks5State.Connected)
 			{
@@ -365,7 +324,7 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 				{
 					try
 					{
-						h(this, new DataReceivedEventArgs(Data, this, this.callbackState));
+						h(this, new DataReceivedEventArgs(Buffer, Offset, Count, this, this.callbackState));
 					}
 					catch (Exception ex)
 					{
@@ -375,13 +334,13 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 			}
 			else if (this.state == Socks5State.Initializing)
 			{
-				if (Data.Length < 2 || Data[0] < 5)
+				if (Count < 2 || Buffer[Offset++] < 5)
 				{
 					this.ToError();
 					return;
 				}
 
-				byte Method = Data[1];
+				byte Method = Buffer[Offset++];
 
 				switch (Method)
 				{
@@ -396,13 +355,15 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 			}
 			else
 			{
-				if (Data.Length < 5 || Data[0] < 5)
+				int c = Offset + Count;
+
+				if (Count < 5 || Buffer[Offset++] < 5)
 				{
 					this.ToError();
 					return;
 				}
 
-				byte REP = Data[1];
+				byte REP = Buffer[Offset++];
 
 				switch (REP)
 				{
@@ -456,16 +417,16 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 						break;
 				}
 
-				byte ATYP = Data[3];
-				int i = 4;
-				int c = Data.Length;
+				Offset++;
+
+				byte ATYP = Buffer[Offset++];
 				IPAddress Addr = null;
 				string DomainName = null;
 
 				switch (ATYP)
 				{
 					case 1: // IPv4.
-						if (i + 4 > c)
+						if (Offset + 4 > c)
 						{
 							this.Error("Expected more bytes.");
 							this.ToError();
@@ -473,26 +434,26 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 						}
 
 						byte[] A = new byte[4];
-						Array.Copy(Data, i, A, 0, 4);
-						i += 4;
+						Array.Copy(Buffer, Offset, A, 0, 4);
+						Offset += 4;
 						Addr = new IPAddress(A);
 						break;
 
 					case 3: // Domain name.
-						byte NrBytes = Data[i++];
-						if (i + NrBytes > c)
+						byte NrBytes = Buffer[Offset++];
+						if (Offset + NrBytes > c)
 						{
 							this.Error("Expected more bytes.");
 							this.ToError();
 							return;
 						}
 
-						DomainName = Encoding.ASCII.GetString(Data, i, NrBytes);
-						i += NrBytes;
+						DomainName = Encoding.ASCII.GetString(Buffer, Offset, NrBytes);
+						Offset += NrBytes;
 						break;
 
 					case 4: // IPv6.
-						if (i + 16 > c)
+						if (Offset + 16 > c)
 						{
 							this.Error("Expected more bytes.");
 							this.ToError();
@@ -500,8 +461,8 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 						}
 
 						A = new byte[16];
-						Array.Copy(Data, i, A, 0, 16);
-						i += 16;
+						Array.Copy(Buffer, Offset, A, 0, 16);
+						Offset += 16;
 						Addr = new IPAddress(A);
 						break;
 
@@ -510,16 +471,16 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 						return;
 				}
 
-				if (i + 2 != c)
+				if (Offset + 2 != c)
 				{
 					this.Error("Invalid number of bytes received.");
 					this.ToError();
 					return;
 				}
 
-				int Port = Data[i++];
+				int Port = Buffer[Offset++];
 				Port <<= 8;
-				Port |= Data[i++];
+				Port |= Buffer[Offset++];
 
 				ResponseEventHandler h = this.OnResponse;
 				if (h != null)
@@ -554,48 +515,49 @@ namespace Waher.Networking.XMPP.P2P.SOCKS5
 
 		private void Request(Command Command, IPAddress DestinationAddress, int Port)
 		{
-			List<byte> Req = new List<byte>()
+			using (MemoryStream Req = new MemoryStream())
 			{
-				5,
-				(byte)Command,
-				0
-			};
+				Req.WriteByte(5);
+				Req.WriteByte((byte)Command);
+				Req.WriteByte(0);
 
-			if (DestinationAddress.AddressFamily == AddressFamily.InterNetwork)
-				Req.Add(1);
-			else if (DestinationAddress.AddressFamily == AddressFamily.InterNetworkV6)
-				Req.Add(4);
-			else
-				throw new ArgumentException("Invalid address family.", nameof(DestinationAddress));
+				if (DestinationAddress.AddressFamily == AddressFamily.InterNetwork)
+					Req.WriteByte(1);
+				else if (DestinationAddress.AddressFamily == AddressFamily.InterNetworkV6)
+					Req.WriteByte(4);
+				else
+					throw new ArgumentException("Invalid address family.", nameof(DestinationAddress));
 
-			Req.AddRange(DestinationAddress.GetAddressBytes());
-			Req.Add((byte)(Port >> 8));
-			Req.Add((byte)Port);
+				byte[] Addr = DestinationAddress.GetAddressBytes();
+				Req.Write(Addr, 0, Addr.Length);
+				Req.WriteByte((byte)(Port >> 8));
+				Req.WriteByte((byte)Port);
 
-			this.SendPacket(Req.ToArray());
+				this.SendPacket(Req.ToArray());
+			}
 		}
 
 		private void Request(Command Command, string DestinationDomainName, int Port)
 		{
-			List<byte> Req = new List<byte>()
+			using (MemoryStream Req = new MemoryStream())
 			{
-				5,
-				(byte)Command,
-				0,
-				3
-			};
+				Req.WriteByte(5);
+				Req.WriteByte((byte)Command);
+				Req.WriteByte(0);
+				Req.WriteByte(3);
 
-			byte[] Bytes = Encoding.ASCII.GetBytes(DestinationDomainName);
-			int c = Bytes.Length;
-			if (c > 255)
-				throw new IOException("Domain name too long.");
+				byte[] Bytes = Encoding.ASCII.GetBytes(DestinationDomainName);
+				int c = Bytes.Length;
+				if (c > 255)
+					throw new IOException("Domain name too long.");
 
-			Req.Add((byte)c);
-			Req.AddRange(Bytes);
-			Req.Add((byte)(Port >> 8));
-			Req.Add((byte)Port);
+				Req.WriteByte((byte)c);
+				Req.Write(Bytes, 0, Bytes.Length);
+				Req.WriteByte((byte)(Port >> 8));
+				Req.WriteByte((byte)Port);
 
-			this.SendPacket(Req.ToArray());
+				this.SendPacket(Req.ToArray());
+			}
 		}
 
 		/// <summary>

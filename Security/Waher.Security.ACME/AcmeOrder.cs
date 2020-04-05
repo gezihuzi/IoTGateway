@@ -210,7 +210,7 @@ namespace Waher.Security.ACME
 				{
 					Uri Location = this.authorizationUris[i];
 					Result[i] = new AcmeAuthorization(this.Client, this.AccountLocation, Location, 
-						(await this.Client.GET(Location)).Payload);
+						(await this.Client.POST_as_GET(Location, this.AccountLocation)).Payload);
 				}
 
 				this.authorizations = Result;
@@ -246,7 +246,7 @@ namespace Waher.Security.ACME
 			if (this.certificate is null)
 				throw new Exception("No certificate URI available.");
 
-			return this.Client.DownloadCertificate(this.certificate);
+			return this.Client.DownloadCertificate(this.AccountLocation, this.certificate);
 		}
 	}
 }

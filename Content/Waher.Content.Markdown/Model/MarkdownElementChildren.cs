@@ -49,12 +49,13 @@ namespace Waher.Content.Markdown.Model
 		/// <param name="NewChildren">New children to add.</param>
 		public virtual void AddChildren(IEnumerable<MarkdownElement> NewChildren)
 		{
-			LinkedList<MarkdownElement> Children = this.children as LinkedList<MarkdownElement>;
-			if (Children is null)
+			if (!(this.children is LinkedList<MarkdownElement> Children))
 			{
 				Children = new LinkedList<MarkdownElement>();
+			
 				foreach (MarkdownElement E in this.children)
 					Children.AddLast(E);
+				
 				this.children = Children;
 			}
 
@@ -122,6 +123,25 @@ namespace Waher.Content.Markdown.Model
 		}
 
 		/// <summary>
+		/// Creates an object of the same type, and meta-data, as the current object,
+		/// but with content defined by <paramref name="Children"/>.
+		/// </summary>
+		/// <param name="Children">New content.</param>
+		/// <param name="Document">Document that will contain the element.</param>
+		/// <returns>Object of same type and meta-data, but with new content.</returns>
+		public abstract MarkdownElementChildren Create(IEnumerable<MarkdownElement> Children, MarkdownDocument Document);
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			foreach (MarkdownElement E in this.Children)
+				E.GenerateMarkdown(Output);
+		}
+
+		/// <summary>
 		/// Generates plain text for the markdown element.
 		/// </summary>
 		/// <param name="Output">Plain text will be output here.</param>
@@ -186,5 +206,54 @@ namespace Waher.Content.Markdown.Model
 					E.Export(Output);
 			}
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			if (!(obj is MarkdownElementChildren x) || !base.Equals(obj))
+				return false;
+
+			IEnumerator<MarkdownElement> e1 = this.children.GetEnumerator();
+			IEnumerator<MarkdownElement> e2 = x.children.GetEnumerator();
+			bool b1, b2;
+
+			while (true)
+			{
+				b1 = e1.MoveNext();
+				b2 = e2.MoveNext();
+
+				if (b1 ^ b2)
+					return false;
+
+				if (!b1)
+					return true;
+
+				if (!e1.Current.Equals(e2.Current))
+					return false;
+			}
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2;
+
+			foreach (MarkdownElement E in this.children)
+			{
+				h2 = E.GetHashCode();
+				h1 = ((h1 << 5) + h1) ^ h2;
+			}
+
+			return h1;
+		}
+
 	}
 }

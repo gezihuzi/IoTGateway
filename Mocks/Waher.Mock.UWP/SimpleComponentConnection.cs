@@ -179,7 +179,7 @@ namespace Waher.Mock
 			{
 				return new SimpleComponentConfiguration(FileName);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				SimpleComponentConfiguration Config = new SimpleComponentConfiguration();
 				bool Ok;
@@ -229,7 +229,7 @@ namespace Waher.Mock
 					}
 
 					if (!Ok)
-						throw;
+						System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
 				}
 #else
 				ConsoleColor FgBak = Console.ForegroundColor;

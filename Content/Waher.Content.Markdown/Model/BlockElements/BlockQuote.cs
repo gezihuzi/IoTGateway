@@ -8,7 +8,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Represents a block quote in a markdown document.
 	/// </summary>
-	public class BlockQuote : MarkdownElementChildren
+	public class BlockQuote : BlockElementChildren
 	{
 		/// <summary>
 		/// Represents a block quote in a markdown document.
@@ -18,6 +18,16 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public BlockQuote(MarkdownDocument Document, IEnumerable<MarkdownElement> Children)
 			: base(Document, Children)
 		{
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			PrefixedBlock(Output, this.Children, ">\t");
+			Output.AppendLine();
 		}
 
 		/// <summary>
@@ -67,7 +77,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		{
 			Output.WriteStartElement("Border");
 			Output.WriteAttributeString("BorderThickness", Settings.BlockQuoteBorderThickness.ToString() + ",0,0,0");
-			Output.WriteAttributeString("Margin", Settings.BlockQuoteMargin.ToString() + "," + Settings.ParagraphMarginTop.ToString() + ",0," + 
+			Output.WriteAttributeString("Margin", Settings.BlockQuoteMargin.ToString() + "," + Settings.ParagraphMarginTop.ToString() + ",0," +
 				Settings.ParagraphMarginBottom.ToString());
 			Output.WriteAttributeString("Padding", Settings.BlockQuotePadding.ToString() + ",0,0,0");
 			Output.WriteAttributeString("BorderBrush", Settings.BlockQuoteBorderColor);
@@ -95,6 +105,18 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public override void Export(XmlWriter Output)
 		{
 			this.Export(Output, "BlockQuote");
+		}
+
+		/// <summary>
+		/// Creates an object of the same type, and meta-data, as the current object,
+		/// but with content defined by <paramref name="Children"/>.
+		/// </summary>
+		/// <param name="Children">New content.</param>
+		/// <param name="Document">Document that will contain the element.</param>
+		/// <returns>Object of same type and meta-data, but with new content.</returns>
+		public override MarkdownElementChildren Create(IEnumerable<MarkdownElement> Children, MarkdownDocument Document)
+		{
+			return new BlockQuote(Document, Children);
 		}
 	}
 }

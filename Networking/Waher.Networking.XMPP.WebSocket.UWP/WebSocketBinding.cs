@@ -39,6 +39,7 @@ namespace Waher.Networking.XMPP.WebSocket
 		private bool writing = false;
 		private bool closeSent = false;
 		private bool disposed = false;
+		private bool reading = false;
 
 		/// <summary>
 		/// Implements a Web-socket XMPP protocol, as defined in RFC 7395.
@@ -113,38 +114,44 @@ namespace Waher.Networking.XMPP.WebSocket
 			this.webSocketClient = null;
 		}
 
-		private void RaiseOnSent(string Payload)
+		private async Task<bool> RaiseOnSent(string Payload)
 		{
 			TextEventHandler h = this.OnSent;
+			bool Result = true;
 
 			if (h != null)
 			{
 				try
 				{
-					h(this, Payload);
+					Result = await h(this, Payload);
 				}
 				catch (Exception ex)
 				{
 					Log.Critical(ex);
 				}
 			}
+
+			return Result;
 		}
 
-		private void RaiseOnReceived(string Payload)
+		private async Task<bool> RaiseOnReceived(string Payload)
 		{
 			TextEventHandler h = this.OnReceived;
+			bool Result = true;
 
 			if (h != null)
 			{
 				try
 				{
-					h(this, Payload);
+					Result= await h(this, Payload);
 				}
 				catch (Exception ex)
 				{
 					Log.Critical(ex);
 				}
 			}
+
+			return Result;
 		}
 
 		/// <summary>
@@ -175,7 +182,7 @@ namespace Waher.Networking.XMPP.WebSocket
 				if (this.xmppClient.HasSniffers)
 					this.xmppClient.Information("Initiating session.");
 
-				this.Send("<?");
+				await this.SendAsync("<?");
 
 				string XmlResponse = await this.ReadText();
 
@@ -304,13 +311,18 @@ namespace Waher.Networking.XMPP.WebSocket
 
 		private async void StartReading()
 		{
+			if (this.reading)
+				throw new InvalidOperationException("Already in a reading state.");
+
+			this.reading = true;
+
 			try
 			{
 				while (!this.terminated)
 				{
 					string Xml = await this.ReadText();
 
-					if (!this.FragmentReceived(Xml))
+					if (!await this.FragmentReceived(Xml))
 						break;
 				}
 			}
@@ -318,6 +330,23 @@ namespace Waher.Networking.XMPP.WebSocket
 			{
 				this.bindingInterface.ConnectionError(ex);
 			}
+			finally
+			{
+				this.reading = false;
+			}
+		}
+
+		/// <summary>
+		/// If reading has been paused.
+		/// </summary>
+		public override bool Paused => !this.reading && !this.disposed;
+
+		/// <summary>
+		/// Continues a paused connection.
+		/// </summary>
+		public override void Continue()
+		{
+			this.StartReading();
 		}
 
 		/// <summary>
@@ -335,7 +364,7 @@ namespace Waher.Networking.XMPP.WebSocket
 					{
 						this.closeSent = true;
 
-						this.Send("<close xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\"/>", async (sender, e) =>
+						Task _ = this.SendAsync("<close xmlns=\"urn:ietf:params:xml:ns:xmpp-framing\"/>", async (sender, e) =>
 						{
 							this.terminated = true;
 
@@ -420,9 +449,9 @@ namespace Waher.Networking.XMPP.WebSocket
 		/// Sends a text packet.
 		/// </summary>
 		/// <param name="Packet">Text packet.</param>
-		public override void Send(string Packet)
+		public override Task<bool> SendAsync(string Packet)
 		{
-			this.Send(Packet, null);
+			return this.SendAsync(Packet, null);
 		}
 
 		/// <summary>
@@ -430,10 +459,10 @@ namespace Waher.Networking.XMPP.WebSocket
 		/// </summary>
 		/// <param name="Packet">Text packet.</param>
 		/// <param name="DeliveryCallback">Optional method to call when packet has been delivered.</param>
-		public override async void Send(string Packet, EventHandler DeliveryCallback)
+		public override async Task<bool> SendAsync(string Packet, EventHandler DeliveryCallback)
 		{
 			if (this.terminated)
-				return;
+				return false;
 
 			if (Packet is null)
 				throw new ArgumentException("Null payloads not allowed.", nameof(Packet));
@@ -457,7 +486,7 @@ namespace Waher.Networking.XMPP.WebSocket
 				{
 					this.xmppClient?.Information("Outbound stanza queued.");
 					this.queue.AddLast(new KeyValuePair<string, EventHandler>(Packet, DeliveryCallback));
-					return;
+					return true;
 				}
 				else
 					this.writing = true;
@@ -476,6 +505,8 @@ namespace Waher.Networking.XMPP.WebSocket
 					await this.webSocketClient?.SendAsync(Buffer, WebSocketMessageType.Text, true, CancellationToken.None);
 
 					this.bindingInterface.NextPing = DateTime.Now.AddMinutes(1);
+
+					await this.RaiseOnSent(Packet);
 
 					if (DeliveryCallback != null)
 					{
@@ -517,12 +548,14 @@ namespace Waher.Networking.XMPP.WebSocket
 
 				this.bindingInterface.ConnectionError(ex);
 			}
+
+			return true;
 		}
 
-		private bool FragmentReceived(string Xml)
+		private Task<bool> FragmentReceived(string Xml)
 		{
 			if (this.terminated)
-				return false;
+				return Task.FromResult<bool>(false);
 
 			if (Xml.StartsWith("<close"))
 			{
@@ -534,13 +567,11 @@ namespace Waher.Networking.XMPP.WebSocket
 					if (!this.closeSent)
 						this.CloseSession();
 
-					return false;
+					return Task.FromResult<bool>(false);
 				}
 			}
 
-			this.RaiseOnReceived(Xml);
-
-			return true;
+			return this.RaiseOnReceived(Xml);
 		}
 	}
 }

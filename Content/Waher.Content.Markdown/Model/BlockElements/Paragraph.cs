@@ -8,7 +8,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Represents a paragraph in a markdown document.
 	/// </summary>
-	public class Paragraph : MarkdownElementChildren
+	public class Paragraph : BlockElementChildren
 	{
 		/// <summary>
 		/// Represents a paragraph in a markdown document.
@@ -18,6 +18,17 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public Paragraph(MarkdownDocument Document, IEnumerable<MarkdownElement> Children)
 			: base(Document, Children)
 		{
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			base.GenerateMarkdown(Output);
+			Output.AppendLine();
+			Output.AppendLine();
 		}
 
 		/// <summary>
@@ -97,5 +108,18 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		{
 			this.Export(Output, "Paragraph");
 		}
+
+		/// <summary>
+		/// Creates an object of the same type, and meta-data, as the current object,
+		/// but with content defined by <paramref name="Children"/>.
+		/// </summary>
+		/// <param name="Children">New content.</param>
+		/// <param name="Document">Document that will contain the element.</param>
+		/// <returns>Object of same type and meta-data, but with new content.</returns>
+		public override MarkdownElementChildren Create(IEnumerable<MarkdownElement> Children, MarkdownDocument Document)
+		{
+			return new Paragraph(Document, Children);
+		}
+
 	}
 }

@@ -12,13 +12,13 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Represents a code block in a markdown document.
 	/// </summary>
-	public class CodeBlock : MarkdownElement
+	public class CodeBlock : BlockElement
 	{
-		private ICodeContent handler;
-		private string[] rows;
-		private string indentString;
-		private string language;
-		private int start, end, indent;
+		private readonly ICodeContent handler;
+		private readonly string[] rows;
+		private readonly string indentString;
+		private readonly string language;
+		private readonly int start, end, indent;
 
 
 		/// <summary>
@@ -140,7 +140,23 @@ namespace Waher.Content.Markdown.Model.BlockElements
 			return Best;
 		}
 
-		private static Dictionary<string, ICodeContent[]> handlers = new Dictionary<string, ICodeContent[]>(StringComparer.CurrentCultureIgnoreCase);
+		private readonly static Dictionary<string, ICodeContent[]> handlers = new Dictionary<string, ICodeContent[]>(StringComparer.CurrentCultureIgnoreCase);
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append("```");
+			Output.AppendLine(this.language);
+
+			foreach (string Row in this.rows)
+				Output.AppendLine(Row);
+
+			Output.AppendLine("```");
+			Output.AppendLine();
+		}
 
 		/// <summary>
 		/// Generates HTML for the markdown element.
@@ -217,7 +233,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 					if (ex is AggregateException ex2)
 					{
 						foreach (Exception ex3 in ex2.InnerExceptions)
-							Output.AppendLine(ex2.Message);
+							Output.AppendLine(ex3.Message);
 					}
 					else
 						Output.AppendLine(ex.Message);
@@ -266,7 +282,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 								Output.WriteAttributeString("TextAlignment", TextAlignment.ToString());
 
 							Output.WriteAttributeString("Foreground", "Red");
-							Output.WriteValue(ex.Message);
+							Output.WriteValue(ex3.Message);
 							Output.WriteEndElement();
 						}
 					}
@@ -342,5 +358,60 @@ namespace Waher.Content.Markdown.Model.BlockElements
 
 			Output.WriteEndElement();
 		}
+
+		/// <summary>
+		/// If the current object has same meta-data as <paramref name="E"/>
+		/// (but not necessarily same content).
+		/// </summary>
+		/// <param name="E">Element to compare to.</param>
+		/// <returns>If same meta-data as <paramref name="E"/>.</returns>
+		public override bool SameMetaData(MarkdownElement E)
+		{
+			return E is CodeBlock x &&
+				this.indent == x.indent &&
+				this.indentString == x.indentString &&
+				this.language == x.language &&
+				AreEqual(this.rows, x.rows) &&
+				base.SameMetaData(E);
+		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is CodeBlock x &&
+				this.indent == x.indent &&
+				this.indentString == x.indentString &&
+				this.language == x.language &&
+				AreEqual(this.rows, x.rows) &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.indent.GetHashCode();
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = this.indentString?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = this.language?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = GetHashCode(this.rows);
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
 	}
 }

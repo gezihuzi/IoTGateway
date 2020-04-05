@@ -138,7 +138,7 @@ namespace Waher.Networking.PeerToPeer
 				if (this.upnpClient is null)
 				{
 					this.upnpClient = new UPnPClient(this.sniffers);
-					this.upnpClient.OnDeviceFound += new UPnPDeviceLocationEventHandler(UpnpClient_OnDeviceFound);
+					this.upnpClient.OnDeviceFound += this.UpnpClient_OnDeviceFound;
 				}
 
 				lock (this.ipAddressesFound)
@@ -307,7 +307,7 @@ namespace Waher.Networking.PeerToPeer
 				catch (AggregateException ex)
 				{
 					if (!(ex.InnerException is UPnPException))
-						throw;
+						System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
 				}
 				catch (UPnPException)
 				{

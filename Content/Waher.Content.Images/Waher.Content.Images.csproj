@@ -14,10 +14,10 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>internet content data type encoding decoding images</PackageTags>
     <NeutralLanguage>English</NeutralLanguage>
-    <AssemblyVersion>1.0.3</AssemblyVersion>
-    <FileVersion>1.0.3</FileVersion>
+    <AssemblyVersion>1.0.4</AssemblyVersion>
+    <FileVersion>1.0.4</FileVersion>
     <PackageIconUrl></PackageIconUrl>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <FileUpgradeFlags>40</FileUpgradeFlags>
     <UpgradeBackupLocation>C:\My Projects\IoTGateway\Backup\Content\Waher.Content.Images\</UpgradeBackupLocation>
     <OldToolsVersion>2.0</OldToolsVersion>
@@ -28,7 +28,7 @@
     <DocumentationFile>bin\Debug\netstandard1.3\.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="1.68.0" />
+    <PackageReference Include="SkiaSharp" Version="1.68.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Waher.Content\Waher.Content.csproj" />

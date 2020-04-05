@@ -150,15 +150,15 @@ namespace Waher.Networking.HTTP.WebSockets
 		{
 			get { return this.httpRequest?.clientConnection?.Encrypted ?? false; }
 		}
-
-		/// <summary>
-		/// Underlying stream used by web-socket.
-		/// </summary>
-		public Stream Stream
-		{
-			get { return this.httpRequest?.clientConnection?.Stream; }
-		}
 #endif
+		/// <summary>
+		/// Current client connection
+		/// </summary>
+		public BinaryTcpClient ClientConnection
+		{
+			get { return this.connection?.Client; }
+		}
+
 		/// <summary>
 		/// Disposes the object.
 		/// </summary>
@@ -796,8 +796,7 @@ namespace Waher.Networking.HTTP.WebSockets
 			}
 
 			byte[] Packet = new byte[c];
-			int i = 0;
-			int j;
+			int i, j;
 			bool ControlFrame = (int)OpCode >= 8;
 
 			if (this.writingFragments && !ControlFrame)

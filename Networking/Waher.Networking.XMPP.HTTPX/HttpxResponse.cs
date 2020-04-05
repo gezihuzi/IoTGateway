@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Waher.Content;
 using Waher.Content.Xml;
 using Waher.Networking.HTTP;
@@ -52,7 +53,7 @@ namespace Waher.Networking.XMPP.HTTPX
 				throw new IOException("Stream cancelled.");
 		}
 
-		public override void BeforeContent(HttpResponse Response, bool ExpectContent)
+		public override Task BeforeContentAsync(HttpResponse Response, bool ExpectContent)
 		{
 			this.response.Append("<resp xmlns='");
 			this.response.Append(HttpxClient.Namespace);
@@ -101,8 +102,7 @@ namespace Waher.Networking.XMPP.HTTPX
 						this.ReturnResponse();
                         
 						this.socks5Output = new P2P.SOCKS5.OutgoingStream(this.streamId, this.from, this.to, 49152, this.e2e, this.e2eReference);
-
-						this.socks5Output.OnAbort += this.IbbOutput_OnAbort;
+						this.socks5Output.OnAbort += this.OnAbort;
 
 						this.socks5Proxy.InitiateSession(this.to, this.streamId, this.InitiationCallback, null);
 					}
@@ -114,7 +114,7 @@ namespace Waher.Networking.XMPP.HTTPX
 						this.ReturnResponse();
 
 						this.ibbOutput = this.ibbClient.OpenStream(this.to, this.maxChunkSize, this.streamId, this.e2e);
-						this.ibbOutput.OnAbort += this.IbbOutput_OnAbort;
+						this.ibbOutput.OnAbort += this.OnAbort;
 					}
 					else
 					{
@@ -136,6 +136,8 @@ namespace Waher.Networking.XMPP.HTTPX
 			}
 			else
 				this.ReturnResponse();
+
+			return Task.CompletedTask;
 		}
 
 		private void InitiationCallback(object Sender, P2P.SOCKS5.StreamEventArgs e)
@@ -143,15 +145,15 @@ namespace Waher.Networking.XMPP.HTTPX
 			if (e.Ok)
 				this.socks5Output.Opened(e.Stream);
 			else
-				this.IbbOutput_OnAbort(null, new EventArgs());
+				this.OnAbort(null, new EventArgs());
 		}
 
-		private void IbbOutput_OnAbort(object sender, EventArgs e)
+		private void OnAbort(object sender, EventArgs e)
 		{
 			this.Cancel();
 		}
 
-		public override void ContentSent()
+		public override Task<bool> ContentSentAsync()
 		{
 			this.ReturnResponse();
 
@@ -169,6 +171,8 @@ namespace Waher.Networking.XMPP.HTTPX
 				else
 					this.SendChunk(true);
 			}
+
+			return Task.FromResult<bool>(true);
 		}
 
 		private void ReturnResponse()
@@ -192,21 +196,21 @@ namespace Waher.Networking.XMPP.HTTPX
 			}
 		}
 
-		public override bool Decode(byte[] Data, int Offset, int NrRead, out int NrAccepted)
+		public override Task<ulong> DecodeAsync(byte[] Buffer, int Offset, int NrRead)
 		{
 			throw new InternalServerErrorException();   // Will not be called.
 		}
 
-		public override void Encode(byte[] Data, int Offset, int NrBytes)
+		public override Task<bool> EncodeAsync(byte[] Buffer, int Offset, int NrBytes)
 		{
 			this.AssertNotCancelled();
 
 			if (this.chunked.Value)
 			{
 				if (this.socks5Output != null)
-					this.socks5Output.Write(Data, Offset, NrBytes);
+					this.socks5Output.Write(Buffer, Offset, NrBytes);
 				else if (this.ibbOutput != null)
-					this.ibbOutput.Write(Data, Offset, NrBytes);
+					this.ibbOutput.Write(Buffer, Offset, NrBytes);
 				else
 				{
 					int NrLeft = this.maxChunkSize - this.pos;
@@ -215,7 +219,7 @@ namespace Waher.Networking.XMPP.HTTPX
 					{
 						if (NrBytes <= NrLeft)
 						{
-							Array.Copy(Data, Offset, this.chunk, this.pos, NrBytes);
+							Array.Copy(Buffer, Offset, this.chunk, this.pos, NrBytes);
 							this.pos += NrBytes;
 							NrBytes = 0;
 
@@ -224,7 +228,7 @@ namespace Waher.Networking.XMPP.HTTPX
 						}
 						else
 						{
-							Array.Copy(Data, Offset, this.chunk, this.pos, NrLeft);
+							Array.Copy(Buffer, Offset, this.chunk, this.pos, NrLeft);
 							this.pos += NrLeft;
 							Offset += NrLeft;
 							NrBytes -= NrLeft;
@@ -235,7 +239,9 @@ namespace Waher.Networking.XMPP.HTTPX
 				}
 			}
 			else
-				this.response.Append(Convert.ToBase64String(Data, Offset, NrBytes));
+				this.response.Append(Convert.ToBase64String(Buffer, Offset, NrBytes));
+
+			return Task.FromResult<bool>(true);
 		}
 
 		private void SendChunk(bool Last)
@@ -297,12 +303,14 @@ namespace Waher.Networking.XMPP.HTTPX
 			}
 		}
 
-		public override void Flush()
+		public override Task<bool> FlushAsync()
 		{
 			this.ReturnResponse();
 
 			if (this.pos > 0)
 				this.SendChunk(false);
+
+			return Task.FromResult<bool>(true);
 		}
 
 		public void Cancel()

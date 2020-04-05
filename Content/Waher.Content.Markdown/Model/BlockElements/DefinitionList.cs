@@ -8,7 +8,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Represents a definition list in a markdown document.
 	/// </summary>
-	public class DefinitionList : MarkdownElementChildren
+	public class DefinitionList : BlockElementChildren
 	{
 		/// <summary>
 		/// Represents a definition list in a markdown document.
@@ -28,6 +28,16 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public DefinitionList(MarkdownDocument Document, params MarkdownElement[] Children)
 			: base(Document, Children)
 		{
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			base.GenerateMarkdown(Output);
+			Output.AppendLine();
 		}
 
 		/// <summary>
@@ -142,6 +152,18 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public override void Export(XmlWriter Output)
 		{
 			this.Export(Output, "DefinitionList");
+		}
+
+		/// <summary>
+		/// Creates an object of the same type, and meta-data, as the current object,
+		/// but with content defined by <paramref name="Children"/>.
+		/// </summary>
+		/// <param name="Children">New content.</param>
+		/// <param name="Document">Document that will contain the element.</param>
+		/// <returns>Object of same type and meta-data, but with new content.</returns>
+		public override MarkdownElementChildren Create(IEnumerable<MarkdownElement> Children, MarkdownDocument Document)
+		{
+			return new DefinitionList(Document, Children);
 		}
 
 	}
