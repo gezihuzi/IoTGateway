@@ -97,6 +97,17 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		}
 
 		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append("{");
+			Output.Append(this.expression.Script);
+			Output.Append("}");
+		}
+
+		/// <summary>
 		/// Generates HTML for the markdown element.
 		/// </summary>
 		/// <param name="Output">HTML will be output here.</param>
@@ -281,7 +292,6 @@ namespace Waher.Content.Markdown.Model.SpanElements
 			if (Result is null)
 				return;
 
-			SKImage Img;
 			string s;
 
 			if (Result is Graph G)
@@ -304,7 +314,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 					Data.Dispose();
 				}
 			}
-			else if ((Img = Result as SKImage) != null)
+			else if (Result is SKImage Img)
 			{
 				using (SKData Data = Img.Encode(SKEncodedImageFormat.Png, 100))
 				{
@@ -337,7 +347,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 							Output.WriteAttributeString("TextAlignment", TextAlignment.ToString());
 
 						Output.WriteAttributeString("Foreground", "Red");
-						Output.WriteValue(ex.Message);
+						Output.WriteValue(ex3.Message);
 						Output.WriteEndElement();
 					}
 				}
@@ -452,5 +462,36 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		{
 			return Name == "StartPosition" || Name == "EndPosition";
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is InlineScript x &&
+				this.expression.Script == x.expression.Script &&
+				this.aloneInParagraph == x.aloneInParagraph &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.expression?.Script?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = this.aloneInParagraph.GetHashCode();
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
 	}
 }

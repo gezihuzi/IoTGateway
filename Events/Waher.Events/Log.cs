@@ -82,14 +82,11 @@ namespace Waher.Events
 		/// </summary>
 		public static void Terminate()
 		{
-			IDisposable Disposable;
-
 			foreach (IEventSink Sink in Sinks)
 			{
 				Unregister(Sink);
 
-				Disposable = Sink as IDisposable;
-				if (Disposable != null)
+				if (Sink is IDisposable Disposable)
 				{
 					try
 					{
@@ -838,7 +835,7 @@ namespace Waher.Events
 					Event(Type, ex2, Object, Actor, EventId, Level, Facility, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, Object, Actor, EventId, Level, Facility, Tags));
+				Event(new Event(Type, Exception, Object, Actor, EventId, Level, Facility, Exception.Source, Tags));
 		}
 
 		/// <summary>
@@ -867,7 +864,7 @@ namespace Waher.Events
 					Event(Type, ex2, Object, Actor, EventId, Level, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, Object, Actor, EventId, Level, string.Empty, Tags));
+				Event(new Event(Type, Exception, Object, Actor, EventId, Level, string.Empty, Exception.Source, Tags));
 		}
 
 		/// <summary>
@@ -894,7 +891,7 @@ namespace Waher.Events
 					Event(Type, ex2, Object, Actor, EventId, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, Object, Actor, string.Empty, EventLevel.Minor, string.Empty, Tags));
+				Event(new Event(Type, Exception, Object, Actor, string.Empty, EventLevel.Minor, string.Empty, Exception.Source, Tags));
 		}
 
 		/// <summary>
@@ -920,7 +917,7 @@ namespace Waher.Events
 					Event(Type, ex2, Object, Actor, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, Object, Actor, string.Empty, EventLevel.Minor, string.Empty, Tags));
+				Event(new Event(Type, Exception, Object, Actor, string.Empty, EventLevel.Minor, string.Empty, Exception.Source, Tags));
 		}
 
 		/// <summary>
@@ -945,7 +942,7 @@ namespace Waher.Events
 					Event(Type, ex2, Object, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, Object, string.Empty, string.Empty, EventLevel.Minor, string.Empty, Tags));
+				Event(new Event(Type, Exception, Object, string.Empty, string.Empty, EventLevel.Minor, string.Empty, Exception.Source, Tags));
 		}
 
 		/// <summary>
@@ -968,7 +965,7 @@ namespace Waher.Events
 					Event(Type, ex2, Tags);
 			}
 			else
-				Event(new Event(Type, Exception, string.Empty, string.Empty, string.Empty, EventLevel.Minor, string.Empty, Tags));
+				Event(new Event(Type, Exception, string.Empty, string.Empty, string.Empty, EventLevel.Minor, string.Empty, Exception.Source, Tags));
 		}
 
 		#endregion

@@ -16,6 +16,7 @@ using Waher.Networking.XMPP.P2P;
 using Waher.Networking.XMPP.P2P.E2E;
 using Waher.Runtime.Settings;
 using Waher.Security;
+using Waher.Security.CallStack;
 using Waher.Security.EllipticCurves;
 
 namespace Waher.Networking.XMPP.Contracts
@@ -41,6 +42,7 @@ namespace Waher.Networking.XMPP.Contracts
         private readonly Dictionary<string, KeyEventArgs> publicKeys = new Dictionary<string, KeyEventArgs>();
         private readonly Dictionary<string, KeyEventArgs> matchingKeys = new Dictionary<string, KeyEventArgs>();
         private EndpointSecurity localEndpoint;
+        private object[] approvedSources = null;
         private readonly string componentAddress;
 
         /// <summary>
@@ -52,9 +54,24 @@ namespace Waher.Networking.XMPP.Contracts
         /// <param name="Client">XMPP Client to use.</param>
         /// <param name="ComponentAddress">Address to the contracts component.</param>
         public ContractsClient(XmppClient Client, string ComponentAddress)
+            : this(Client, ComponentAddress, null)
+        {
+        }
+
+        /// <summary>
+        /// Adds support for legal identities, smart contracts and signatures to an XMPP client.
+        /// 
+        /// The interface is defined in the IEEE XMPP IoT extensions:
+        /// https://gitlab.com/IEEE-SA/XMPPI/IoT
+        /// </summary>
+        /// <param name="Client">XMPP Client to use.</param>
+        /// <param name="ComponentAddress">Address to the contracts component.</param>
+        /// <param name="ApprovedSources">If access to sensitive methods is only accessible from a set of approved sources.</param>
+        public ContractsClient(XmppClient Client, string ComponentAddress, object[] ApprovedSources)
             : base(Client)
         {
             this.componentAddress = ComponentAddress;
+            this.approvedSources = ApprovedSources;
             this.localEndpoint = null;
             Task T = this.LoadKeys();
 
@@ -114,6 +131,25 @@ namespace Waher.Networking.XMPP.Contracts
         }
 
         /// <summary>
+        /// If access to sensitive methods is only accessible from a set of approved sources.
+        /// </summary>
+        /// <param name="ApprovedSources">Approved sources.</param>
+        /// <exception cref="NotSupportedException">If trying to change previously set sources.</exception>
+        public void SetAllowedSources(object[] ApprovedSources)
+        {
+            if (!(this.approvedSources is null))
+                throw new NotSupportedException("Changing approved sources not permitted.");
+
+            this.approvedSources = ApprovedSources;
+        }
+
+        private void AssertAllowed()
+        {
+            if (!(this.approvedSources is null))
+                Assert.CallFromSource(this.approvedSources);
+        }
+
+        /// <summary>
         /// Disposes of the extension.
         /// </summary>
         public override void Dispose()
@@ -133,6 +169,11 @@ namespace Waher.Networking.XMPP.Contracts
         /// Implemented extensions.
         /// </summary>
         public override string[] Extensions => new string[] { };
+
+        /// <summary>
+        /// Component address.
+        /// </summary>
+        public string ComponentAddress => this.componentAddress;
 
         #region Server Public Keys
 
@@ -382,6 +423,8 @@ namespace Waher.Networking.XMPP.Contracts
         public void Apply(string Address, Property[] Properties,
             LegalIdentityEventHandler Callback, object State)
         {
+            this.AssertAllowed();
+
             this.GetMatchingLocalKey(Address, (sender, e) =>
             {
                 if (e.Ok)
@@ -943,6 +986,8 @@ namespace Waher.Networking.XMPP.Contracts
         /// <param name="State">State object to pass on to <paramref name="Callback"/>.</param>
         public void ObsoleteLegalIdentity(string Address, string LegalIdentityId, LegalIdentityEventHandler Callback, object State)
         {
+            this.AssertAllowed();
+
             this.client.SendIqSet(Address, "<obsoleteLegalIdentity id=\"" + XML.Encode(LegalIdentityId) + "\" xmlns=\"" +
                 NamespaceLegalIdentities + "\"/>", (sender, e) =>
                 {
@@ -1016,6 +1061,8 @@ namespace Waher.Networking.XMPP.Contracts
         /// <param name="State">State object to pass on to <paramref name="Callback"/>.</param>
         public void CompromisedLegalIdentity(string Address, string LegalIdentityId, LegalIdentityEventHandler Callback, object State)
         {
+            this.AssertAllowed();
+
             this.client.SendIqSet(Address, "<compromisedLegalIdentity id=\"" + XML.Encode(LegalIdentityId) + "\" xmlns=\"" +
                 NamespaceLegalIdentities + "\"/>", (sender, e) =>
                 {
@@ -1089,6 +1136,8 @@ namespace Waher.Networking.XMPP.Contracts
         /// <param name="State">State object to pass on to <paramref name="Callback"/>.</param>
         public void Sign(string Address, byte[] Data, SignatureEventHandler Callback, object State)
         {
+            this.AssertAllowed();
+
             this.GetMatchingLocalKey(Address, (sender, e) =>
             {
                 byte[] Signature = null;
@@ -1152,6 +1201,8 @@ namespace Waher.Networking.XMPP.Contracts
         /// <param name="State">State object to pass on to <paramref name="Callback"/>.</param>
         public void Sign(string Address, Stream Data, SignatureEventHandler Callback, object State)
         {
+            this.AssertAllowed();
+
             this.GetMatchingLocalKey(Address, (sender, e) =>
             {
                 byte[] Signature = null;

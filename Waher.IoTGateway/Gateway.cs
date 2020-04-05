@@ -26,11 +26,14 @@ using Waher.Events.Files;
 using Waher.Events.Persistence;
 using Waher.Events.XMPP;
 using Waher.IoTGateway.Events;
+using Waher.IoTGateway.Exceptions;
 using Waher.IoTGateway.Setup;
+using Waher.IoTGateway.Setup.Legal;
 using Waher.IoTGateway.WebResources;
 using Waher.IoTGateway.WebResources.ExportFormats;
 using Waher.Networking.CoAP;
 using Waher.Networking.HTTP;
+using Waher.Networking.PeerToPeer;
 using Waher.Networking.Sniffers;
 using Waher.Networking.XMPP;
 using Waher.Networking.XMPP.Concentrator;
@@ -48,6 +51,7 @@ using Waher.Runtime.Inventory.Loader;
 using Waher.Runtime.Settings;
 using Waher.Runtime.Timing;
 using Waher.Persistence;
+using Waher.Persistence.Filters;
 using Waher.Script;
 using Waher.Security;
 using Waher.Security.CallStack;
@@ -158,6 +162,7 @@ namespace Waher.IoTGateway
 		private static string exceptionFileName = null;
 		private static int nextServiceCommandNr = 128;
 		private static int beforeUninstallCommandNr = 0;
+		private static bool firstStart = true;
 		private static bool registered = false;
 		private static bool connected = false;
 		private static bool immediateReconnect;
@@ -199,6 +204,9 @@ namespace Waher.IoTGateway
 		/// <returns>If the gateway was successfully started.</returns>
 		public static async Task<bool> Start(bool ConsoleOutput, bool LoopbackIntefaceAvailable, string InstanceName)
 		{
+			bool FirstStart = firstStart;
+
+			firstStart = false;
 			instance = InstanceName;
 
 			string Suffix = string.IsNullOrEmpty(InstanceName) ? string.Empty : "." + InstanceName;
@@ -241,35 +249,39 @@ namespace Waher.IoTGateway
 					appDataFolder + "Events" + Path.DirectorySeparatorChar + "Event Log %YEAR%-%MONTH%-%DAY%T%HOUR%.xml",
 					appDataFolder + "Transforms" + Path.DirectorySeparatorChar + "EventXmlToHtml.xslt", 7));
 
-				Assert.UnauthorizedAccess += Assert_UnauthorizedAccess;
+				if (FirstStart)
+					Assert.UnauthorizedAccess += Assert_UnauthorizedAccess;
 
 				Log.Informational("Server starting up.");
 
-				Initialize();
-
-				beforeUninstallCommandNr = Gateway.RegisterServiceCommand(BeforeUninstall);
-
-				if (!Directory.Exists(rootFolder))
+				if (FirstStart)
 				{
-					string s = Path.Combine(runtimeFolder, "Root");
-					if (Directory.Exists(s))
+					Initialize();
+
+					beforeUninstallCommandNr = Gateway.RegisterServiceCommand(BeforeUninstall);
+
+					if (!Directory.Exists(rootFolder))
 					{
-						CopyFolder(runtimeFolder, appDataFolder, "*.config", true);
-						CopyFolders(s, rootFolder, true);
-						CopyFolders(Path.Combine(runtimeFolder, "Graphics"), Path.Combine(appDataFolder, "Graphics"), true);
-						CopyFolders(Path.Combine(runtimeFolder, "Transforms"), Path.Combine(appDataFolder, "Transforms"), true);
+						string s = Path.Combine(runtimeFolder, "Root");
+						if (Directory.Exists(s))
+						{
+							CopyFolder(runtimeFolder, appDataFolder, "*.config", true);
+							CopyFolders(s, rootFolder, true);
+							CopyFolders(Path.Combine(runtimeFolder, "Graphics"), Path.Combine(appDataFolder, "Graphics"), true);
+							CopyFolders(Path.Combine(runtimeFolder, "Transforms"), Path.Combine(appDataFolder, "Transforms"), true);
+						}
 					}
-				}
 
-				string[] ManifestFiles = Directory.GetFiles(runtimeFolder, "*.manifest", SearchOption.TopDirectoryOnly);
-				Dictionary<string, CopyOptions> ContentOptions = new Dictionary<string, CopyOptions>();
+					string[] ManifestFiles = Directory.GetFiles(runtimeFolder, "*.manifest", SearchOption.TopDirectoryOnly);
+					Dictionary<string, CopyOptions> ContentOptions = new Dictionary<string, CopyOptions>();
 
-				foreach (string ManifestFile in ManifestFiles)
-				{
-					CheckContentFiles(ManifestFile, ContentOptions);
+					foreach (string ManifestFile in ManifestFiles)
+					{
+						CheckContentFiles(ManifestFile, ContentOptions);
 
-					if (ManifestFile.EndsWith("Waher.Utility.Install.manifest"))
-						CheckInstallUtilityFiles(ManifestFile);
+						if (ManifestFile.EndsWith("Waher.Utility.Install.manifest"))
+							CheckInstallUtilityFiles(ManifestFile);
+					}
 				}
 
 				Types.SetModuleParameter("AppData", appDataFolder);
@@ -277,11 +289,14 @@ namespace Waher.IoTGateway
 
 				scheduler = new Scheduler();
 
-				Task T = Task.Run(() =>
+				if (FirstStart)
 				{
-					CodeContent.GraphViz.Init();
-					CodeContent.PlantUml.Init();
-				});
+					Task T = Task.Run(() =>
+					{
+						CodeContent.GraphViz.Init();
+						CodeContent.PlantUml.Init();
+					});
+				}
 
 				XmlDocument Config = new XmlDocument();
 
@@ -316,6 +331,29 @@ namespace Waher.IoTGateway
 									Directory.CreateDirectory(exceptionFolder);
 
 								DateTime Now = DateTime.Now;
+								string[] ExceptionFiles = Directory.GetFiles(exceptionFolder, "*.txt", SearchOption.TopDirectoryOnly);
+								foreach (string ExceptionFile in ExceptionFiles)
+								{
+									try
+									{
+										DateTime TP = File.GetLastWriteTime(ExceptionFile);
+										if ((TP - Now).TotalDays > 90)
+											File.Delete(ExceptionFile);
+										else
+										{
+											string XmlFile = Path.ChangeExtension(ExceptionFile, "xml");
+											if (!File.Exists(XmlFile))
+											{
+												Log.Informational("Processing " + ExceptionFile);
+												Analyze.Process(ExceptionFile, XmlFile);
+											}
+										}
+									}
+									catch (Exception ex)
+									{
+										Log.Critical(ex, ExceptionFile);
+									}
+								}
 
 								exceptionFileName = Path.Combine(exceptionFolder, Now.Year.ToString("D4") + "-" + Now.Month.ToString("D2") + "-" + Now.Day.ToString("D2") +
 									" " + Now.Hour.ToString("D2") + "." + Now.Minute.ToString("D2") + "." + Now.Second.ToString("D2") + ".txt");
@@ -325,70 +363,87 @@ namespace Waher.IoTGateway
 								exceptionFile.Write("Start of export: ");
 								exceptionFile.WriteLine(DateTime.Now.ToString());
 
-								AppDomain.CurrentDomain.FirstChanceException += (sender, e) =>
+								if (FirstStart)
 								{
-									if (!exportExceptions || e.Exception.StackTrace.Contains("FirstChanceExceptionEventArgs"))
-										return;
-
-									lock (exceptionFile)
+									AppDomain.CurrentDomain.FirstChanceException += (sender, e) =>
 									{
-										exceptionFile.WriteLine(new string('-', 80));
-										exceptionFile.Write("Type: ");
+										if (exceptionFile is null)
+											return;
 
-										if (e.Exception != null)
-											exceptionFile.WriteLine(e.Exception.GetType().FullName);
-										else
-											exceptionFile.WriteLine("null");
-
-										exceptionFile.Write("Time: ");
-										exceptionFile.WriteLine(DateTime.Now.ToString());
-
-										if (e.Exception != null)
+										lock (exceptionFile)
 										{
-											LinkedList<Exception> Exceptions = new LinkedList<Exception>();
-											Exceptions.AddLast(e.Exception);
+											if (!exportExceptions || e.Exception.StackTrace.Contains("FirstChanceExceptionEventArgs"))
+												return;
 
-											while (Exceptions.First != null)
+											exceptionFile.WriteLine(new string('-', 80));
+											exceptionFile.Write("Type: ");
+
+											if (e.Exception != null)
+												exceptionFile.WriteLine(e.Exception.GetType().FullName);
+											else
+												exceptionFile.WriteLine("null");
+
+											exceptionFile.Write("Time: ");
+											exceptionFile.WriteLine(DateTime.Now.ToString());
+
+											if (e.Exception != null)
 											{
-												Exception ex = Exceptions.First.Value;
-												Exceptions.RemoveFirst();
+												LinkedList<Exception> Exceptions = new LinkedList<Exception>();
+												Exceptions.AddLast(e.Exception);
 
-												exceptionFile.WriteLine();
-
-												exceptionFile.WriteLine(ex.Message);
-												exceptionFile.WriteLine();
-												exceptionFile.WriteLine(ex.StackTrace);
-												exceptionFile.WriteLine();
-
-												if (ex is AggregateException ex2)
+												while (Exceptions.First != null)
 												{
-													foreach (Exception ex3 in ex2.InnerExceptions)
-														Exceptions.AddLast(ex3);
-												}
-												else if (ex.InnerException != null)
-													Exceptions.AddLast(ex.InnerException);
-											}
-										}
+													Exception ex = Exceptions.First.Value;
+													Exceptions.RemoveFirst();
 
-										exceptionFile.Flush();
-									}
-								};
+													exceptionFile.WriteLine();
+
+													exceptionFile.WriteLine(ex.Message);
+													exceptionFile.WriteLine();
+													exceptionFile.WriteLine(ex.StackTrace);
+													exceptionFile.WriteLine();
+
+													if (ex is AggregateException ex2)
+													{
+														foreach (Exception ex3 in ex2.InnerExceptions)
+															Exceptions.AddLast(ex3);
+													}
+													else if (ex.InnerException != null)
+														Exceptions.AddLast(ex.InnerException);
+												}
+											}
+
+											exceptionFile.Flush();
+										}
+									};
+								}
 								break;
 
 							case "Database":
-								if (!(DatabaseProvider is null))
-									throw new Exception("Database provider already initiated.");
+								if (FirstStart)
+								{
+									if (!(DatabaseProvider is null))
+										throw new Exception("Database provider already initiated.");
 
-								if (GetDatabaseProvider != null)
-									DatabaseProvider = await GetDatabaseProvider(E);
+									if (GetDatabaseProvider != null)
+										DatabaseProvider = await GetDatabaseProvider(E);
+									else
+										DatabaseProvider = null;
+
+									if (DatabaseProvider is null)
+										throw new Exception("Database provider not defined. Make sure the GetDatabaseProvider event has an appropriate event handler.");
+
+									internalProvider = DatabaseProvider;
+									Database.Register(DatabaseProvider, false);
+								}
 								else
-									DatabaseProvider = null;
+								{
+									DatabaseProvider = Database.Provider;
+									await DatabaseProvider.Start();
 
-								if (DatabaseProvider is null)
-									throw new Exception("Database provider not defined. Make sure the GetDatabaseProvider event has an appropriate event handler.");
-
-								internalProvider = DatabaseProvider;
-								Database.Register(DatabaseProvider, false);
+									if (Ledger.HasProvider)
+										await Ledger.Provider.Start();
+								}
 								break;
 
 							case "Ports":
@@ -416,10 +471,10 @@ namespace Waher.IoTGateway
 					AutoRepairReportFolder.SetValue(DatabaseProvider, Path.Combine(AppDataFolder, "Backup"));
 
 				MethodInfo MI = ProviderType.GetMethod("RepairIfInproperShutdown", new Type[] { typeof(string) });
-				
+
 				if (!(MI is null))
 				{
-					T = MI.Invoke(DatabaseProvider, new object[] { Gateway.AppDataFolder + "Transforms" + Path.DirectorySeparatorChar + "DbStatXmlToHtml.xslt" }) as Task;
+					Task T = MI.Invoke(DatabaseProvider, new object[] { Gateway.AppDataFolder + "Transforms" + Path.DirectorySeparatorChar + "DbStatXmlToHtml.xslt" }) as Task;
 					if (T is Task<string[]> StringArrayTask)
 						DatabaseConfiguration.RepairedCollections = await StringArrayTask;
 					else if (!(T is null))
@@ -744,27 +799,11 @@ namespace Waher.IoTGateway
 				Types.SetModuleParameter("Avatar", avatarClient);
 				Types.SetModuleParameter("Scheduler", scheduler);
 
-				MeteringTopology.OnNewMomentaryValues += NewMomentaryValues;
+				if (FirstStart)
+					MeteringTopology.OnNewMomentaryValues += NewMomentaryValues;
 
 				DeleteOldDataSourceEvents(null);
-			}
-			catch (Exception ex)
-			{
-				Log.Critical(ex);
 
-				startingServer?.Release();
-				startingServer?.Dispose();
-				startingServer = null;
-
-				gatewayRunning?.Release();
-				gatewayRunning?.Dispose();
-				gatewayRunning = null;
-
-				ExceptionDispatchInfo.Capture(ex).Throw();
-			}
-
-			Task T2 = Task.Run(async () =>
-			{
 				try
 				{
 					string BinaryFolder = AppDomain.CurrentDomain.BaseDirectory;
@@ -811,7 +850,7 @@ namespace Waher.IoTGateway
 						}
 					}
 
-					if (Types.StartAllModules(int.MaxValue))
+					if (await Types.StartAllModules(int.MaxValue, new ModuleStartOrder()))
 						Log.Informational("Server started.");
 					else
 						Log.Critical("Unable to start all modules.");
@@ -826,11 +865,44 @@ namespace Waher.IoTGateway
 					startingServer?.Dispose();
 					startingServer = null;
 
-					xmppClient.Connect();
+					if (xmppClient.State != XmppState.Connected)
+						xmppClient.Connect();
 				}
-			});
+			}
+			catch (Exception ex)
+			{
+				Log.Critical(ex);
+
+				startingServer?.Release();
+				startingServer?.Dispose();
+				startingServer = null;
+
+				gatewayRunning?.Release();
+				gatewayRunning?.Dispose();
+				gatewayRunning = null;
+
+				ExceptionDispatchInfo.Capture(ex).Throw();
+			}
 
 			return true;
+		}
+
+		private class ModuleStartOrder : IComparer<IModule>
+		{
+			public int Compare(IModule x, IModule y)
+			{
+				bool dm1 = x is Persistence.LifeCycle.DatabaseModule;
+				bool dm2 = y is Persistence.LifeCycle.DatabaseModule;
+
+				if (dm1 && dm2)
+					return 0;
+				else if (dm1)
+					return -1;
+				else if (dm2)
+					return 1;
+				else
+					return string.Compare(x.GetType().FullName, y.GetType().FullName);
+			}
 		}
 
 		private static void Assert_UnauthorizedAccess(object Sender, UnauthorizedAccessEventArgs e)
@@ -1400,19 +1472,23 @@ namespace Waher.IoTGateway
 		/// <summary>
 		/// Stops the gateway.
 		/// </summary>
-		public static void Stop()
+		public static async Task Stop()
 		{
-			IDisposable Disposable;
+			if (stopped)
+			{
+				Log.Notice("Request to stop Gateway, but Gateway already stopped.");
+				return;
+			}
 
 			Log.Informational("Server shutting down.");
 
 			stopped = true;
 			try
 			{
-				Types.StopAllModules();
+				await Types.StopAllModules();
 
 				if (!(internalProvider is null) && Database.Provider != internalProvider)
-					internalProvider.Stop();
+					await internalProvider.Stop();
 
 				scheduler?.Dispose();
 				scheduler = null;
@@ -1475,7 +1551,7 @@ namespace Waher.IoTGateway
 				mailClient?.Dispose();
 				mailClient = null;
 
-				if (xmppClient != null)
+				if (!(xmppClient is null))
 				{
 					using (ManualResetEvent OfflineSent = new ManualResetEvent(false))
 					{
@@ -1487,8 +1563,7 @@ namespace Waher.IoTGateway
 					{
 						XmppClient.Remove(Sniffer);
 
-						Disposable = Sniffer as IDisposable;
-						if (Disposable != null)
+						if (Sniffer is IDisposable Disposable)
 							Disposable.Dispose();
 					}
 
@@ -1505,8 +1580,7 @@ namespace Waher.IoTGateway
 					{
 						webServer.Remove(Sniffer);
 
-						Disposable = Sniffer as IDisposable;
-						if (Disposable != null)
+						if (Sniffer is IDisposable Disposable)
 							Disposable.Dispose();
 					}
 
@@ -1516,10 +1590,10 @@ namespace Waher.IoTGateway
 
 				if (exportExceptions)
 				{
-					exportExceptions = false;
-
 					lock (exceptionFile)
 					{
+						exportExceptions = false;
+
 						exceptionFile.WriteLine(new string('-', 80));
 						exceptionFile.Write("End of export: ");
 						exceptionFile.WriteLine(DateTime.Now.ToString());
@@ -1527,6 +1601,8 @@ namespace Waher.IoTGateway
 						exceptionFile.Flush();
 						exceptionFile.Close();
 					}
+
+					exceptionFile = null;
 				}
 			}
 			finally
@@ -1952,7 +2028,7 @@ namespace Waher.IoTGateway
 			{
 				if (DoLog)
 					Log.Debug("No local login: No session.");
-		
+
 				return;
 			}
 
@@ -2076,7 +2152,7 @@ namespace Waher.IoTGateway
 				if (DoLog)
 					Log.Critical(ex);
 
-				throw;
+				ExceptionDispatchInfo.Capture(ex).Throw();
 			}
 			catch (Exception ex)
 			{
@@ -2246,14 +2322,6 @@ namespace Waher.IoTGateway
 		public static PubSubClient PubSubClient
 		{
 			get { return pepClient.PubSubClient; }
-		}
-
-		/// <summary>
-		/// XMPP Contracts Client, if such a compoent is available on the XMPP broker.
-		/// </summary>
-		public static ContractsClient ContractsClient
-		{
-			get { return contractsClient; }
 		}
 
 		/// <summary>
@@ -2927,6 +2995,11 @@ namespace Waher.IoTGateway
 			sb.Append("://");
 			if (DomainConfiguration.Instance.UseDomainName)
 				sb.Append(domain);
+			/*else if (httpxProxy?.ServerlessMessaging?.Network.State == PeerToPeerNetworkState.Ready)
+				sb.Append(httpxProxy.ServerlessMessaging.Network.ExternalAddress.ToString());
+			
+				TODO: P2P & Serverless messaging: Recognize HTTP request, and redirect to local HTTP Server, and return response.
+			 */
 			else
 			{
 				IPAddress IP4 = null;
@@ -3032,6 +3105,354 @@ namespace Waher.IoTGateway
 			}
 
 			return Result.ToArray();
+		}
+
+		#endregion
+
+		#region Smart Contracts
+
+		/// <summary>
+		/// XMPP Contracts Client, if such a compoent is available on the XMPP broker.
+		/// </summary>
+		public static ContractsClient ContractsClient
+		{
+			get { return contractsClient; }
+		}
+
+		/// <summary>
+		/// Requests the operator to sign a smart contract.
+		/// </summary>
+		/// <param name="Contract">Contract to sign. Must be ready to sign.</param>
+		/// <param name="Role">Role to sign for. Must be available in contract.</param>
+		/// <param name="Purpose">Purpose of contract. Must be one row.</param>
+		/// <exception cref="ArgumentException">Any of the arguments are invalid.</exception>
+		public static async Task RequestContractSignature(Contract Contract, string Role, string Purpose)
+		{
+			bool RoleFound = false;
+
+			if (Contract is null)
+				throw new ArgumentException("Contract cannot be null.", nameof(Contract));
+
+			// TODO: Check contract server signature is valid.
+
+			foreach (Role R in Contract.Roles)
+			{
+				if (R.Name == Role)
+				{
+					RoleFound = true;
+					break;
+				}
+			}
+
+			if (!RoleFound)
+				throw new ArgumentException("Invalid role.", nameof(Role));
+
+			if (string.IsNullOrEmpty(Purpose) || Purpose.IndexOfAny(CommonTypes.CRLF) >= 0)
+				throw new ArgumentException("Invalid purpose.", nameof(Purpose));
+
+			try
+			{
+				string Module = string.Empty;
+				int Skip = 1;
+
+				while (true)
+				{
+					StackFrame Frame = new StackFrame(Skip);
+					MethodBase Method = Frame.GetMethod();
+					if (Method is null)
+						break;
+
+					Type Type = Method.DeclaringType;
+					Assembly Assembly = Type.Assembly;
+					Module = Assembly.GetName().Name;
+
+					if (Type != typeof(Gateway) && !Module.StartsWith("System."))
+						break;
+
+					Skip++;
+				}
+
+				string Markdown;
+				ContractSignatureRequest Request = await Database.FindFirstIgnoreRest<ContractSignatureRequest>(new FilterAnd(
+					new FilterFieldEqualTo("ContractId", Contract.ContractId),
+					new FilterFieldEqualTo("Role", Role),
+					new FilterFieldEqualTo("Module", Module),
+					new FilterFieldEqualTo("Provider", Contract.Provider),
+					new FilterFieldEqualTo("Purpose", Purpose)));
+
+
+				if (Request is null)
+				{
+					Request = new ContractSignatureRequest()
+					{
+						Contract = Contract,
+						Received = DateTime.Now,
+						Signed = null,
+						ContractId = Contract.ContractId,
+						Role = Role,
+						Module = Module,
+						Provider = Contract.Provider,
+						Purpose = Purpose
+					};
+
+					await Database.Insert(Request);
+
+					Markdown = File.ReadAllText(Path.Combine(rootFolder, "Settings", "SignatureRequest.md"));
+
+					int i = Markdown.IndexOf("~~~~~~");
+					int c = Markdown.Length;
+
+					if (i >= 0)
+					{
+						i += 6;
+						while (i < c && Markdown[i] == '~')
+							i++;
+
+						Markdown = Markdown.Substring(i).TrimStart();
+					}
+
+					i = Markdown.IndexOf("~~~~~~");
+					if (i > 0)
+						Markdown = Markdown.Substring(0, i).TrimEnd();
+
+					Variables Variables = new Variables(
+						new Variable("RequestId", Request.ObjectId),
+						new Variable("Request", Request));
+					MarkdownSettings Settings = new MarkdownSettings(emoji1_24x24, false, Variables);
+					Markdown = MarkdownDocument.Preprocess(Markdown, Settings);
+
+					StringBuilder sb = new StringBuilder(Markdown);
+
+					sb.AppendLine();
+					sb.Append("Link: [`");
+					sb.Append(Request.ContractId);
+					sb.Append("](");
+					sb.Append(GetUrl("/SignatureRequest.md?RequestId=" + Request.ObjectId));
+					sb.AppendLine(")");
+
+					Markdown = sb.ToString();
+				}
+				else
+				{
+					Markdown = "**Reminder**: Smart Contract [" + Request.ContractId + "](" +
+						GetUrl("/SignatureRequest.md?RequestId=" + Request.ObjectId) + ") is waiting for your signature.";
+				}
+
+				SendNotification(Markdown);
+			}
+			catch (Exception ex)
+			{
+				Log.Critical(ex);
+			}
+		}
+
+		#endregion
+
+		#region Finding Files
+
+		/// <summary>
+		/// Finds files in a set of folders, and optionally, their subfolders. This method only finds files in folders
+		/// the application as access rights to.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="IncludeSubfolders">If subfolders are to be included.</param>
+		/// <param name="BreakOnFirst">If the search should break when it finds the first file.</param>
+		/// <returns>Files matching the pattern found in the corresponding folders.</returns>
+		public static string[] FindFiles(Environment.SpecialFolder[] Folders, string Pattern, bool IncludeSubfolders, bool BreakOnFirst)
+		{
+			return FindFiles(GetFolders(Folders), Pattern, IncludeSubfolders, BreakOnFirst ? 1 : int.MaxValue);
+		}
+
+		/// <summary>
+		/// Finds files in a set of folders, and optionally, their subfolders. This method only finds files in folders
+		/// the application as access rights to.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="IncludeSubfolders">If subfolders are to be included.</param>
+		/// <param name="BreakOnFirst">If the search should break when it finds the first file.</param>
+		/// <returns>Files matching the pattern found in the corresponding folders.</returns>
+		public static string[] FindFiles(string[] Folders, string Pattern, bool IncludeSubfolders, bool BreakOnFirst)
+		{
+			return FindFiles(Folders, Pattern, IncludeSubfolders, BreakOnFirst ? 1 : int.MaxValue);
+		}
+
+		/// <summary>
+		/// Finds files in a set of folders, and optionally, their subfolders. This method only finds files in folders
+		/// the application as access rights to.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="IncludeSubfolders">If subfolders are to be included.</param>
+		/// <param name="MaxCount">Maximum number of files to return.</param>
+		/// <returns>Files matching the pattern found in the corresponding folders.</returns>
+		public static string[] FindFiles(string[] Folders, string Pattern, bool IncludeSubfolders, int MaxCount)
+		{
+			return FindFiles(Folders, Pattern, IncludeSubfolders ? int.MaxValue : 0, MaxCount);
+		}
+
+		/// <summary>
+		/// Finds files in a set of folders, and optionally, their subfolders. This method only finds files in folders
+		/// the application as access rights to.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="SubfolderDepth">Maximum folder depth to search.</param>
+		/// <param name="MaxCount">Maximum number of files to return.</param>
+		/// <returns>Files matching the pattern found in the corresponding folders.</returns>
+		public static string[] FindFiles(string[] Folders, string Pattern, int SubfolderDepth, int MaxCount)
+		{
+			if (MaxCount <= 0)
+				throw new ArgumentException("Must be positive.", nameof(MaxCount));
+
+			LinkedList<KeyValuePair<string, int>> ToProcess = new LinkedList<KeyValuePair<string, int>>();
+			Dictionary<string, bool> Processed = new Dictionary<string, bool>(StringComparer.CurrentCultureIgnoreCase);
+			List<string> Result = new List<string>();
+			int Count = 0;
+
+			foreach (string Folder in Folders)
+				ToProcess.AddLast(new KeyValuePair<string, int>(Folder, SubfolderDepth));
+
+			while (!(ToProcess.First is null))
+			{
+				KeyValuePair<string, int> Processing = ToProcess.First.Value;
+				string Folder = Processing.Key;
+				int Depth = Processing.Value;
+
+				ToProcess.RemoveFirst();
+				if (Processed.ContainsKey(Folder))
+					continue;
+
+				Processed[Folder] = true;
+
+				try
+				{
+					string[] Names = Directory.GetFiles(Folder, Pattern, SearchOption.TopDirectoryOnly);
+
+					foreach (string FileName in Names)
+					{
+						Result.Add(FileName);
+						if (++Count >= MaxCount)
+							return Result.ToArray();
+					}
+
+					if (Depth-- > 0)
+					{
+						Names = Directory.GetDirectories(Folder);
+
+						foreach (string SubFolder in Names)
+							ToProcess.AddLast(new KeyValuePair<string, int>(SubFolder, Depth));
+					}
+				}
+				catch (Exception)
+				{
+					// Ignore
+				}
+			}
+
+			return Result.ToArray();
+		}
+
+		/// <summary>
+		/// Gets the physical locations of special folders.
+		/// </summary>
+		/// <param name="Folders">Special folders.</param>
+		/// <param name="AppendWith">Append result with this array of folders.</param>
+		/// <returns>Physical locations. Only the physical locations of defined special folders are returned.</returns>
+		public static string[] GetFolders(Environment.SpecialFolder[] Folders, params string[] AppendWith)
+		{
+			List<string> Result = new List<string>();
+
+			foreach (Environment.SpecialFolder Folder in Folders)
+			{
+				string Path = Environment.GetFolderPath(Folder, Environment.SpecialFolderOption.None);
+				if (!string.IsNullOrEmpty(Path))
+				{
+					// In 64-bit operating systems, the 32-bit folder can be returned anyway, if the process is running in 32 bit.
+
+					if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)		
+					{
+						switch (Folder)
+						{
+							case Environment.SpecialFolder.CommonProgramFiles:
+							case Environment.SpecialFolder.ProgramFiles:
+							case Environment.SpecialFolder.System:
+								if (Path.EndsWith(" (x86)"))
+								{
+									Path = Path.Substring(0, Path.Length - 6);
+									if (!Directory.Exists(Path))
+										continue;
+								}
+								break;
+						}
+					}
+
+					Result.Add(Path);
+				}
+			}
+
+			foreach (string Path in AppendWith)
+				Result.Add(Path);
+
+			return Result.ToArray();
+		}
+
+		/// <summary>
+		/// Finds the latest file matching a search pattern, by searching in a set of folders, and optionally, their subfolders. 
+		/// This method only finds files in folders the application as access rights to. If no file is found, the empty string
+		/// is returned.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="IncludeSubfolders">If subfolders are to be included.</param>
+		/// <returns>Latest file if found, empty string if not.</returns>
+		public static string FindLatestFile(Environment.SpecialFolder[] Folders, string Pattern, bool IncludeSubfolders)
+		{
+			return FindLatestFile(GetFolders(Folders), Pattern, IncludeSubfolders);
+		}
+
+		/// <summary>
+		/// Finds the latest file matching a search pattern, by searching in a set of folders, and optionally, their subfolders. 
+		/// This method only finds files in folders the application as access rights to. If no file is found, the empty string
+		/// is returned.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="IncludeSubfolders">If subfolders are to be included.</param>
+		/// <returns>Latest file if found, empty string if not.</returns>
+		public static string FindLatestFile(string[] Folders, string Pattern, bool IncludeSubfolders)
+		{
+			return FindLatestFile(Folders, Pattern, IncludeSubfolders ? int.MaxValue : 0);
+		}
+
+		/// <summary>
+		/// Finds the latest file matching a search pattern, by searching in a set of folders, and optionally, their subfolders. 
+		/// This method only finds files in folders the application as access rights to. If no file is found, the empty string
+		/// is returned.
+		/// </summary>
+		/// <param name="Folders">Folders to search in.</param>
+		/// <param name="Pattern">Pattern to search for.</param>
+		/// <param name="SubfolderDepth">Maximum folder depth to search.</param>
+		/// <returns>Latest file if found, empty string if not.</returns>
+		public static string FindLatestFile(string[] Folders, string Pattern, int SubfolderDepth)
+		{
+			string[] Files = FindFiles(Folders, Pattern, SubfolderDepth, int.MaxValue);
+			string Result = string.Empty;
+			DateTime BestTP = DateTime.MinValue;
+			DateTime TP;
+
+			foreach (string FilePath in Files)
+			{
+				TP = File.GetCreationTimeUtc(FilePath);
+				if (TP > BestTP)
+				{
+					BestTP = TP;
+					Result = FilePath;
+				}
+			}
+
+			return Result;
 		}
 
 		#endregion

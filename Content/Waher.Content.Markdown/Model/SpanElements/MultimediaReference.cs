@@ -10,7 +10,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 	/// </summary>
 	public class MultimediaReference : LinkReference
 	{
-		private bool aloneInParagraph;
+		private readonly bool aloneInParagraph;
 
 		/// <summary>
 		/// Multimedia reference.
@@ -31,6 +31,16 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		public bool AloneInParagraph
 		{
 			get { return this.aloneInParagraph; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append('!');
+			base.GenerateMarkdown(Output);
 		}
 
 		/// <summary>
@@ -91,6 +101,32 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		internal override bool InlineSpanElement
 		{
 			get { return true; }
+		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is MultimediaReference x &&
+				this.aloneInParagraph == x.aloneInParagraph &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.aloneInParagraph.GetHashCode();
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
 		}
 
 	}

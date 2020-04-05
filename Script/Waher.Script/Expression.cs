@@ -69,7 +69,7 @@ namespace Waher.Script
 
 		static Expression()
 		{
-			Types.OnInvalidated += new EventHandler(Types_OnInvalidated);
+			Types.OnInvalidated += Types_OnInvalidated;
 		}
 
 		private static void Types_OnInvalidated(object sender, EventArgs e)
@@ -610,14 +610,9 @@ namespace Waher.Script
 					case '(':
 					case '[':
 					case '{':
+					case '?':
 						this.pos--;
 						return Condition;   // Null-check operator
-
-					case '?':
-						this.pos++;
-						IfTrue = this.AssertOperandNotNull(this.ParseStatement());
-
-						return new NullCheck(Condition, IfTrue, Start, this.pos - Start, this);
 
 					default:
 						IfTrue = this.AssertOperandNotNull(this.ParseStatement());
@@ -2223,24 +2218,30 @@ namespace Waher.Script
 					case '?':
 						if (NullCheck)
 						{
-							this.pos--;
-							return Node;
+							this.pos++;
+
+							ScriptNode IfNull = this.AssertOperandNotNull(this.ParseObject());
+							Node = new NullCheck(Node, IfNull, Start, this.pos - Start, this);
+							break;
 						}
-
-						this.pos++;
-						ch = this.PeekNextChar();
-						switch (ch)
+						else
 						{
-							case '.':
-							case '(':
-							case '[':
-							case '{':
-								NullCheck = true;
-								continue;
+							this.pos++;
+							ch = this.PeekNextChar();
+							switch (ch)
+							{
+								case '.':
+								case '(':
+								case '[':
+								case '{':
+								case '?':
+									NullCheck = true;
+									continue;
 
-							default:
-								this.pos--;
-								return Node;
+								default:
+									this.pos--;
+									return Node;
+							}
 						}
 
 					case '.':
@@ -4493,7 +4494,7 @@ namespace Waher.Script
 		/// <returns>Converted value.</returns>
 		public static object ConvertTo(IElement Value, Type DesiredType, ScriptNode Node)
 		{
-			return Value.AssociatedObjectValue;    // TODO: Implement .NET type conversion.
+			return Convert.ChangeType(Value.AssociatedObjectValue, DesiredType);	// TODO: Implement .NET type conversion.
 		}
 
 		/// <summary>
@@ -4607,14 +4608,22 @@ namespace Waher.Script
 		/// <returns>If conversion was successful.</returns>
 		public static bool TryConvert<T>(object Value, out T Result)
 		{
-			if (!TryConvert(Value, typeof(T), out object Obj) || !(Obj is T Result2))
+			if (TryConvert(Value, typeof(T), out object Obj))
 			{
-				Result = default;
-				return false;
+				if (Obj is T Result2)
+				{
+					Result = Result2;
+					return true;
+				}
+				else if (Value is null && !typeof(T).GetTypeInfo().IsValueType)
+				{
+					Result = default;
+					return true;
+				}
 			}
 
-			Result = Result2;
-			return true;
+			Result = default;
+			return false;
 		}
 
 		/// <summary>
@@ -4626,6 +4635,12 @@ namespace Waher.Script
 		/// <returns>If conversion was successful.</returns>
 		public static bool TryConvert(object Value, Type DesiredType, out object Result)
 		{
+			if (Value is null)
+			{
+				Result = null;
+				return !DesiredType.GetTypeInfo().IsValueType;
+			}
+
 			Type T = Value.GetType();
 			TypeInfo TI = T.GetTypeInfo();
 

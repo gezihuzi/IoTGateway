@@ -8,7 +8,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Represents a numbered list in a markdown document.
 	/// </summary>
-	public class NumberedList : MarkdownElementChildren
+	public class NumberedList : BlockElementChildren
 	{
 		/// <summary>
 		/// Represents a numbered list in a markdown document.
@@ -28,6 +28,16 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public NumberedList(MarkdownDocument Document, params MarkdownElement[] Children)
 			: base(Document, Children)
 		{
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			base.GenerateMarkdown(Output);
+			Output.AppendLine();
 		}
 
 		/// <summary>
@@ -104,8 +114,6 @@ namespace Waher.Content.Markdown.Model.BlockElements
 			NumberedItem Item;
 			int Expected = 0;
 			int Row = 0;
-			int TopMargin;
-			int BottomMargin;
 			bool ParagraphBullet;
 
 			Output.WriteStartElement("Grid");
@@ -123,7 +131,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 			Output.WriteEndElement();
 			Output.WriteStartElement("Grid.RowDefinitions");
 
-			foreach (MarkdownElement E in this.Children)
+			foreach (MarkdownElement _ in this.Children)
 			{
 				Output.WriteStartElement("RowDefinition");
 				Output.WriteAttributeString("Height", "Auto");
@@ -138,7 +146,7 @@ namespace Waher.Content.Markdown.Model.BlockElements
 				Item = E as NumberedItem;
 
 				ParagraphBullet = !E.InlineSpanElement || E.OutsideParagraph;
-				E.GetMargins(Settings, out TopMargin, out BottomMargin);
+				E.GetMargins(Settings, out int TopMargin, out int BottomMargin);
 
 				Output.WriteStartElement("TextBlock");
 				Output.WriteAttributeString("TextWrapping", "Wrap");
@@ -199,6 +207,18 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public override void Export(XmlWriter Output)
 		{
 			this.Export(Output, "NumberedList");
+		}
+
+		/// <summary>
+		/// Creates an object of the same type, and meta-data, as the current object,
+		/// but with content defined by <paramref name="Children"/>.
+		/// </summary>
+		/// <param name="Children">New content.</param>
+		/// <param name="Document">Document that will contain the element.</param>
+		/// <returns>Object of same type and meta-data, but with new content.</returns>
+		public override MarkdownElementChildren Create(IEnumerable<MarkdownElement> Children, MarkdownDocument Document)
+		{
+			return new NumberedList(Document, Children);
 		}
 	}
 }

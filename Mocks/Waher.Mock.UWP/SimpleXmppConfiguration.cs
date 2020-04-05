@@ -233,7 +233,7 @@ namespace Waher.Mock
 			{
 				return Load(FileName);
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
 				XmppCredentials Credentials = new XmppCredentials();
 				bool Ok;
@@ -304,7 +304,7 @@ namespace Waher.Mock
 						}
 					}
 					else
-						throw;
+						System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
 				}
 #else
 				ConsoleColor FgBak = Console.ForegroundColor;

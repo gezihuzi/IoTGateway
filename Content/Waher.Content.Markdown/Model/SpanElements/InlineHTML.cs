@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Xml;
+using Waher.Content.Markdown.Model.Atoms;
 
 namespace Waher.Content.Markdown.Model.SpanElements
 {
 	/// <summary>
 	/// Inline HTML.
 	/// </summary>
-	public class InlineHTML : MarkdownElement
+	public class InlineHTML : MarkdownElement, IEditableText
 	{
-		private string html;
+		private readonly string html;
 
 		/// <summary>
 		/// Inline HTML.
@@ -29,6 +30,15 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		public string HTML
 		{
 			get { return this.html; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append(this.html);
 		}
 
 		/// <summary>
@@ -85,5 +95,57 @@ namespace Waher.Content.Markdown.Model.SpanElements
 			Output.WriteCData(this.html);
 			Output.WriteEndElement();
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is InlineHTML x &&
+				this.html == x.html &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.html?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
+		/// <summary>
+		/// Return an enumeration of the editable HTML as atoms.
+		/// </summary>
+		/// <returns>Atoms.</returns>
+		public IEnumerable<Atom> Atomize()
+		{
+			LinkedList<Atom> Result = new LinkedList<Atom>();
+
+			foreach (char ch in this.html)
+				Result.AddLast(new InlineHtmlCharacter(this.Document, this, ch));
+
+			return Result;
+		}
+
+		/// <summary>
+		/// Assembles a markdown element from a sequence of atoms.
+		/// </summary>
+		/// <param name="Document">Document that will contain the new element.</param>
+		/// <param name="Text">Assembled text.</param>
+		/// <returns>Assembled markdown element.</returns>
+		public MarkdownElement Assemble(MarkdownDocument Document, string Text)
+		{
+			return new InlineHTML(Document, Text);
+		}
+
 	}
 }

@@ -153,7 +153,7 @@ namespace Waher.IoTGateway.Console
 
 				ManualResetEvent Done = new ManualResetEvent(false);
 				Gateway.OnTerminate += (sender, e) => Done.Set();
-				System.Console.CancelKeyPress += (sender, e) => Done.Set();
+				System.Console.CancelKeyPress += (sender, e) => Gateway.Terminate();
 
 				try
 				{
@@ -165,7 +165,7 @@ namespace Waher.IoTGateway.Console
 							case CtrlTypes.CTRL_CLOSE_EVENT:
 							case CtrlTypes.CTRL_C_EVENT:
 							case CtrlTypes.CTRL_SHUTDOWN_EVENT:
-								Done.Set();
+								Gateway.Terminate();
 								break;
 
 							case CtrlTypes.CTRL_LOGOFF_EVENT:
@@ -189,7 +189,7 @@ namespace Waher.IoTGateway.Console
 			}
 			finally
 			{
-				Gateway.Stop();
+				Gateway.Stop().Wait();
 				Log.Terminate();
 			}
 		}
@@ -205,7 +205,7 @@ namespace Waher.IoTGateway.Console
 				int.Parse(DatabaseConfig.Attributes["blocksInCache"].Value),
 				int.Parse(DatabaseConfig.Attributes["blobBlockSize"].Value), Encoding.UTF8,
 				int.Parse(DatabaseConfig.Attributes["timeoutMs"].Value),
-				Encrypted, false, true);
+				Encrypted, true);
 
 			return Task.FromResult<IDatabaseProvider>(Result);
 		}

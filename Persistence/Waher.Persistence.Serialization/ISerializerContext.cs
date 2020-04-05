@@ -40,14 +40,6 @@ namespace Waher.Persistence.Serialization
 		}
 
 		/// <summary>
-		/// If the provider is run in debug mode.
-		/// </summary>
-		bool Debug
-		{
-			get;
-		}
-
-		/// <summary>
 		/// If normalized names are to be used or not. Normalized names reduces the number
 		/// of bytes required to serialize objects, but do not work in a decentralized
 		/// architecture.
@@ -80,6 +72,13 @@ namespace Waher.Persistence.Serialization
 		/// <param name="Type">Type of object to serialize.</param>
 		/// <returns>Object Serializer</returns>
 		IObjectSerializer GetObjectSerializer(Type Type);
+		
+		/// <summary>
+		/// Gets the object serializer corresponding to a specific type, if one exists.
+		/// </summary>
+		/// <param name="Type">Type of object to serialize.</param>
+		/// <returns>Object Serializer if exists, or null if not.</returns>
+		IObjectSerializer GetObjectSerializerNoCreate(Type Type);
 
 		/// <summary>
 		/// Creates a new GUID.

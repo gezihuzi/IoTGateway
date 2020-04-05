@@ -10,13 +10,13 @@ namespace Waher.Content.Markdown.Model
 	/// </summary>
 	public class MultimediaItem
 	{
-		private MarkdownDocument doc;
-		private string url;
-		private string title;
+		private readonly MarkdownDocument doc;
+		private readonly string url;
+		private readonly string title;
 		private string extension;
 		private string contentType;
-		private int? width;
-		private int? height;
+		private readonly int? width;
+		private readonly int? height;
 
 		/// <summary>
 		/// Multimedia item.
@@ -141,6 +141,48 @@ namespace Waher.Content.Markdown.Model
 				Output.WriteAttributeString("height", this.height.Value.ToString());
 
 			Output.WriteEndElement();
+		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is MultimediaItem Obj &&
+				this.url == Obj.url &&
+				this.title == Obj.title &&
+				this.extension == Obj.extension &&
+				this.contentType == Obj.contentType &&
+				this.width == Obj.width &&
+				this.height == Obj.height;
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = this.url?.GetHashCode() ?? 0;
+			int h2 = this.title?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			h2 = this.extension?.GetHashCode() ?? 0;
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			h2 = this.contentType?.GetHashCode() ?? 0;
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			h2 = this.width?.GetHashCode() ?? 0;
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			h2 = this.height?.GetHashCode() ?? 0;
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
 		}
 
 	}

@@ -8,10 +8,11 @@ namespace Waher.Content.Markdown.Model.BlockElements
 	/// <summary>
 	/// Section Separator
 	/// </summary>
-	public class SectionSeparator : MarkdownElement
+	public class SectionSeparator : BlockElement
 	{
-		private int sectionNr;
-		private int nrColumns;
+		private readonly string row;
+		private readonly int sectionNr;
+		private readonly int nrColumns;
 
 		/// <summary>
 		/// Section Separator
@@ -19,11 +20,13 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		/// <param name="Document">Markdown document.</param>
 		/// <param name="SectionNr">Section number</param>
 		/// <param name="NrColumns">Number of columns in following section.</param>
-		public SectionSeparator(MarkdownDocument Document, int SectionNr, int NrColumns)
+		/// <param name="Row">Markdown definition.</param>
+		public SectionSeparator(MarkdownDocument Document, int SectionNr, int NrColumns, string Row)
 			: base(Document)
 		{
 			this.sectionNr = SectionNr;
 			this.nrColumns = NrColumns;
+			this.row = Row;
 		}
 
 		/// <summary>
@@ -40,6 +43,16 @@ namespace Waher.Content.Markdown.Model.BlockElements
 		public int NrColumns
 		{
 			get { return this.nrColumns; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.AppendLine(this.row);
+			Output.AppendLine();
 		}
 
 		/// <summary>
@@ -111,6 +124,55 @@ namespace Waher.Content.Markdown.Model.BlockElements
 			Output.WriteAttributeString("sectionNr", this.sectionNr.ToString());
 			Output.WriteAttributeString("nrColumns", this.nrColumns.ToString());
 			Output.WriteEndElement();
+		}
+
+		/// <summary>
+		/// If the current object has same meta-data as <paramref name="E"/>
+		/// (but not necessarily same content).
+		/// </summary>
+		/// <param name="E">Element to compare to.</param>
+		/// <returns>If same meta-data as <paramref name="E"/>.</returns>
+		public override bool SameMetaData(MarkdownElement E)
+		{
+			return E is SectionSeparator x &&
+				this.nrColumns == x.nrColumns &&
+				this.sectionNr == x.sectionNr &&
+				this.row == x.row &&
+				base.SameMetaData(E);
+		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is SectionSeparator x &&
+				this.nrColumns == x.nrColumns &&
+				this.sectionNr == x.sectionNr &&
+				this.row == x.row &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.row?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = this.nrColumns.GetHashCode();
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+			h2 = this.sectionNr.GetHashCode();
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
 		}
 
 	}

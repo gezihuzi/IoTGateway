@@ -1,8 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Waher.Events;
 
 namespace Waher.Runtime.Inventory
@@ -21,7 +21,6 @@ namespace Waher.Runtime.Inventory
 		private static readonly Dictionary<string, object> moduleParameters = new Dictionary<string, object>();
 		private static Assembly[] assemblies = null;
 		private static IModule[] modules = null;
-		private static WaitHandle[] startWaitHandles = null;
 		private static readonly Type[] noTypes = new Type[0];
 		private static readonly object[] noParameters = new object[0];
 		private static readonly object synchObject = new object();
@@ -312,19 +311,34 @@ namespace Waher.Runtime.Inventory
 		/// <summary>
 		/// Stops all modules.
 		/// </summary>
-		public static void StopAllModules()
+		public static Task StopAllModules()
+		{
+			return StopAllModules(null);
+		}
+
+		/// <summary>
+		/// Stops all modules.
+		/// </summary>
+		/// <param name="Order">Order in which modules should be stopped.
+		/// Default order is the reverse starting order, if no other order is provided.</param>
+		public static async Task StopAllModules(IComparer<IModule> Order)
 		{
 			if (isInitialized)
 			{
-				IModule[] Modules = Types.Modules;
+				IModule[] Modules = (IModule[])Types.Modules?.Clone();
 
-				if (Modules != null)
+				if (!(Modules is null))
 				{
+					if (Order is null)
+						Array.Reverse(Modules);
+					else
+						Array.Sort<IModule>(Modules, Order);
+
 					foreach (IModule Module in Modules)
 					{
 						try
 						{
-							Module.Stop();
+							await Module.Stop();
 						}
 						catch (Exception ex)
 						{
@@ -333,6 +347,11 @@ namespace Waher.Runtime.Inventory
 					}
 
 					modules = new IModule[0];
+				}
+
+				lock (moduleParameters)
+				{
+					moduleParameters.Clear();
 				}
 			}
 		}
@@ -360,14 +379,25 @@ namespace Waher.Runtime.Inventory
 		/// <param name="Timeout">Timeout, in milliseconds.</param>
 		/// <returns>If all modules have been successfully started (true), or if at least one has not been
 		/// started within the time period defined by <paramref name="Timeout"/>.</returns>
-		public static bool StartAllModules(int Timeout)
+		public static Task<bool> StartAllModules(int Timeout)
+		{
+			return StartAllModules(Timeout, null);
+		}
+
+		/// <summary>
+		/// Starts all loaded modules.
+		/// </summary>
+		/// <param name="Timeout">Timeout, in milliseconds.</param>
+		/// <param name="Order">Order in which modules should be started.</param>
+		/// <returns>If all modules have been successfully started (true), or if at least one has not been
+		/// started within the time period defined by <paramref name="Timeout"/>.</returns>
+		public static async Task<bool> StartAllModules(int Timeout, IComparer<IModule> Order)
 		{
 			if (modules is null || modules.Length == 0)
 			{
-				List<WaitHandle> Handles = new List<WaitHandle>();
+				List<Task> Tasks = new List<Task>();
 				List<IModule> Modules = new List<IModule>();
 				IModule Module;
-				WaitHandle Handle;
 				TypeInfo TI;
 
 				foreach (Type T in GetTypesImplementingInterface(typeof(IModule)))
@@ -381,10 +411,6 @@ namespace Waher.Runtime.Inventory
 						Log.Informational("Starting module.", T.FullName);
 
 						Module = (IModule)Activator.CreateInstance(T);
-						Handle = Module.Start();
-						if (Handle != null)
-							Handles.Add(Handle);
-
 						Modules.Add(Module);
 					}
 					catch (Exception ex)
@@ -393,13 +419,31 @@ namespace Waher.Runtime.Inventory
 					}
 				}
 
-				startWaitHandles = Handles.ToArray();
+				if (!(Order is null))
+					Modules.Sort(Order);
+
+				foreach (IModule Module2 in Modules)
+				{
+					try
+					{
+						Tasks.Add(Module2.Start());
+					}
+					catch (Exception ex)
+					{
+						Log.Error("Unable to start module: " + ex.Message, Module2.GetType().FullName);
+					}
+				}
+
 				modules = Modules.ToArray();
 
-				if (startWaitHandles.Length == 0)
+				if (Tasks.Count > 0)
+				{
+					Task TimeoutTask = Task.Delay(Timeout);
+					Task Result = await Task.WhenAny(Task.WhenAll(Tasks.ToArray()), TimeoutTask);
+					return Result != TimeoutTask;
+				}
+				else
 					return true;
-
-				return WaitHandle.WaitAll(startWaitHandles, Timeout);
 			}
 			else
 				return true;
@@ -431,7 +475,7 @@ namespace Waher.Runtime.Inventory
 		{
 			lock (moduleParameters)
 			{
-				if (moduleParameters.ContainsKey(Name))
+				if (moduleParameters.TryGetValue(Name, out object Value2) && !Value.Equals(Value2))
 					throw new ArgumentException("Module parameter already defined: " + Name, nameof(Name));
 
 				moduleParameters[Name] = Value;
@@ -476,127 +520,149 @@ namespace Waher.Runtime.Inventory
 			string LastNamespace = string.Empty;
 			int i;
 
-			if (isInitialized)
-				throw new Exception("Script engine is already initialized.");
-
-			CheckIncluded(ref Assemblies, typeof(Types).GetTypeInfo().Assembly);
-			CheckIncluded(ref Assemblies, typeof(int).GetTypeInfo().Assembly);
-
-			if (Array.IndexOf<Assembly>(Assemblies, A = typeof(Types).GetTypeInfo().Assembly) < 0)
+			lock (synchObject)
 			{
-				int c = Assemblies.Length;
-				Array.Resize<Assembly>(ref Assemblies, c + 1);
-				Assemblies[c] = A;
-			}
-
-			assemblies = Assemblies;
-
-			foreach (Assembly Assembly in Assemblies)
-			{
-				try
+				if (isInitialized)
 				{
-					AssemblyTypes = Assembly.ExportedTypes;
+					List<Assembly> NewAssemblies = new List<Assembly>();
+					List<Assembly> AllAssemblies = new List<Assembly>();
+
+					AllAssemblies.AddRange(assemblies);
+
+					foreach (Assembly Assembly in Assemblies)
+					{
+						if (!AllAssemblies.Contains(Assembly))
+						{
+							NewAssemblies.Add(Assembly);
+							AllAssemblies.Add(Assembly);
+						}
+					}
+
+					assemblies = AllAssemblies.ToArray();
+					Assemblies = NewAssemblies.ToArray();
 				}
-				catch (ReflectionTypeLoadException ex)
+				else
 				{
-					foreach (Exception ex2 in ex.LoaderExceptions)
-						Log.Critical(ex2);
+					CheckIncluded(ref Assemblies, typeof(Types).GetTypeInfo().Assembly);
+					CheckIncluded(ref Assemblies, typeof(int).GetTypeInfo().Assembly);
 
-					continue;
+					if (Array.IndexOf<Assembly>(Assemblies, A = typeof(Types).GetTypeInfo().Assembly) < 0)
+					{
+						int c = Assemblies.Length;
+						Array.Resize<Assembly>(ref Assemblies, c + 1);
+						Assemblies[c] = A;
+					}
+
+					assemblies = Assemblies;
 				}
-				catch (Exception ex)
+
+				foreach (Assembly Assembly in Assemblies)
 				{
-					Log.Critical(ex, Assembly.FullName);
-					continue;
-				}
-
-				foreach (Type Type in AssemblyTypes)
-				{
-					TypeName = Type.FullName;
-					i = TypeName.LastIndexOf('`');
-					if (i > 0 && int.TryParse(TypeName.Substring(i + 1), out int j))
-						TypeName = TypeName.Substring(0, i);
-
-					types[TypeName] = Type;
-
-
-					i = TypeName.LastIndexOf('.');
-					if (i >= 0)
-						RegisterQualifiedName(TypeName.Substring(i + 1), TypeName);
-
 					try
 					{
-						foreach (Type Interface in Type.GetTypeInfo().ImplementedInterfaces)
-						{
-							InterfaceName = Interface.FullName;
-							if (InterfaceName is null)
-								continue;   // Generic interface.
+						AssemblyTypes = Assembly.ExportedTypes;
+					}
+					catch (ReflectionTypeLoadException ex)
+					{
+						foreach (Exception ex2 in ex.LoaderExceptions)
+							Log.Critical(ex2);
 
-							if (!typesPerInterface.TryGetValue(InterfaceName, out Types))
+						continue;
+					}
+					catch (Exception ex)
+					{
+						Log.Critical(ex, Assembly.FullName);
+						continue;
+					}
+
+					foreach (Type Type in AssemblyTypes)
+					{
+						TypeName = Type.FullName;
+						i = TypeName.LastIndexOf('`');
+						if (i > 0 && int.TryParse(TypeName.Substring(i + 1), out int j))
+							TypeName = TypeName.Substring(0, i);
+
+						types[TypeName] = Type;
+
+
+						i = TypeName.LastIndexOf('.');
+						if (i >= 0)
+							RegisterQualifiedName(TypeName.Substring(i + 1), TypeName);
+
+						try
+						{
+							foreach (Type Interface in Type.GetTypeInfo().ImplementedInterfaces)
 							{
-								Types = new SortedDictionary<string, Type>();
-								typesPerInterface[InterfaceName] = Types;
+								InterfaceName = Interface.FullName;
+								if (InterfaceName is null)
+									continue;   // Generic interface.
+
+								if (!typesPerInterface.TryGetValue(InterfaceName, out Types))
+								{
+									Types = new SortedDictionary<string, Type>();
+									typesPerInterface[InterfaceName] = Types;
+								}
+
+								Types[TypeName] = Type;
+							}
+						}
+						catch (Exception)
+						{
+							// Implemented interfaces might not be accessible.
+						}
+
+						Namespace = Type.Namespace;
+						if (Namespace != null)
+						{
+							if (Namespace == LastNamespace)
+								Types = LastTypes;
+							else
+							{
+								if (!typesPerNamespace.TryGetValue(Namespace, out Types))
+								{
+									Types = new SortedDictionary<string, Type>();
+									typesPerNamespace[Namespace] = Types;
+
+									i = Namespace.LastIndexOf('.');
+									while (i >= 0)
+									{
+										RegisterQualifiedName(Namespace.Substring(i + 1), Namespace);
+										ParentNamespace = Namespace.Substring(0, i);
+
+										if (!namespacesPerNamespace.TryGetValue(ParentNamespace, out SortedDictionary<string, bool> Namespaces))
+										{
+											Namespaces = new SortedDictionary<string, bool>();
+											namespacesPerNamespace[ParentNamespace] = Namespaces;
+										}
+										else
+										{
+											if (Namespaces.ContainsKey(Namespace))
+												break;
+										}
+
+										Namespaces[Namespace] = true;
+										Namespace = ParentNamespace;
+										i = Namespace.LastIndexOf('.');
+									}
+
+									if (i < 0)
+									{
+										rootNamespaces[Namespace] = true;
+										RegisterQualifiedName(Namespace, Namespace);
+									}
+								}
+
+								LastNamespace = Namespace;
+								LastTypes = Types;
 							}
 
 							Types[TypeName] = Type;
 						}
 					}
-					catch (Exception)
-					{
-						// Implemented interfaces might not be accessible.
-					}
-
-					Namespace = Type.Namespace;
-					if (Namespace != null)
-					{
-						if (Namespace == LastNamespace)
-							Types = LastTypes;
-						else
-						{
-							if (!typesPerNamespace.TryGetValue(Namespace, out Types))
-							{
-								Types = new SortedDictionary<string, Type>();
-								typesPerNamespace[Namespace] = Types;
-
-								i = Namespace.LastIndexOf('.');
-								while (i >= 0)
-								{
-									RegisterQualifiedName(Namespace.Substring(i + 1), Namespace);
-									ParentNamespace = Namespace.Substring(0, i);
-
-									if (!namespacesPerNamespace.TryGetValue(ParentNamespace, out SortedDictionary<string, bool> Namespaces))
-									{
-										Namespaces = new SortedDictionary<string, bool>();
-										namespacesPerNamespace[ParentNamespace] = Namespaces;
-									}
-									else
-									{
-										if (Namespaces.ContainsKey(Namespace))
-											break;
-									}
-
-									Namespaces[Namespace] = true;
-									Namespace = ParentNamespace;
-									i = Namespace.LastIndexOf('.');
-								}
-
-								if (i < 0)
-								{
-									rootNamespaces[Namespace] = true;
-									RegisterQualifiedName(Namespace, Namespace);
-								}
-							}
-
-							LastNamespace = Namespace;
-							LastTypes = Types;
-						}
-
-						Types[TypeName] = Type;
-					}
 				}
-			}
 
-			isInitialized = true;
+				isInitialized = true;
+			}
 		}
 
 		private static void RegisterQualifiedName(string UnqualifiedName, string QualifiedName)

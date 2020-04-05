@@ -97,44 +97,19 @@ namespace Waher.Events
 		public Event(EventType Type, Exception Exception, string Object, string Actor, string EventId, EventLevel Level, string Facility, string Module,
 			params KeyValuePair<string, object>[] Tags)
 		{
-			this.timestamp = DateTime.Now;
-			this.type = Type;
-			this.message = Exception.Message;
-			this.obj = Object;
-			this.actor = Actor;
-			this.eventId = EventId;
-			this.level = Level;
-			this.facility = Facility;
-			this.module = Module;
-			this.stackTrace = Exception.StackTrace;
-			this.tags = Tags;
-		}
+			string s;
 
-		/// <summary>
-		/// Class representing an event.
-		/// </summary>
-		/// <param name="Type">Event Type.</param>
-		/// <param name="Exception">Exception object.</param>
-		/// <param name="Object">Object related to the event.</param>
-		/// <param name="Actor">Actor responsible for the action causing the event.</param>
-		/// <param name="EventId">Computer-readable Event ID identifying type of even.</param>
-		/// <param name="Level">Event Level.</param>
-		/// <param name="Facility">Facility can be either a facility in the network sense or in the system sense.</param>
-		/// <param name="Tags">Variable set of tags providing event-specific information.</param>
-		public Event(EventType Type, Exception Exception, string Object, string Actor, string EventId, EventLevel Level, string Facility,
-			params KeyValuePair<string, object>[] Tags)
-		{
 			this.timestamp = DateTime.Now;
-			this.type = Type;
+			this.type = Exception is IEventType Tp && Tp.Type.HasValue ? Tp.Type.Value : Type;
 			this.message = Exception.Message;
-			this.obj = Object;
-			this.actor = Actor;
-			this.eventId = string.IsNullOrEmpty(EventId) ? Exception.GetType().FullName : EventId;
-			this.level = Level;
-			this.facility = Facility;
-			this.module = Exception.Source;
+			this.obj = Exception is IEventObject Obj && !string.IsNullOrEmpty(s = Obj.Object) ? s : Object;
+			this.actor = Exception is IEventActor Act && !string.IsNullOrEmpty(s = Act.Actor) ? s : Actor;
+			this.eventId = Exception is IEventId EvId && !string.IsNullOrEmpty(s = EvId.EventId) ? s : EventId;
+			this.level = Exception is IEventLevel Lvl && Lvl.Level.HasValue ? Lvl.Level.Value : Level;
+			this.facility = Exception is IEventFacility EvFa && !string.IsNullOrEmpty(s = EvFa.Facility) ? s : Facility;
+			this.module = Exception is IEventModule Mod && !string.IsNullOrEmpty(s = Mod.Module) ? s : Module;
 			this.stackTrace = Exception.StackTrace;
-			this.tags = Tags;
+			this.tags = (Tags is null || Tags.Length == 0) && Exception is IEventTags Tgs ? Tgs.Tags : Tags;
 		}
 
 		/// <summary>

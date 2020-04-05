@@ -11,7 +11,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 	/// </summary>
 	public class AutomaticLinkUrl : MarkdownElement
 	{
-		private string url;
+		private readonly string url;
 
 		/// <summary>
 		/// Inline HTML.
@@ -30,6 +30,17 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		public string URL
 		{
 			get { return this.url; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append('<');
+			Output.Append(this.url);
+			Output.Append('>');
 		}
 
 		/// <summary>
@@ -100,5 +111,32 @@ namespace Waher.Content.Markdown.Model.SpanElements
 			Output.WriteAttributeString("url", this.url);
 			Output.WriteEndElement();
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is AutomaticLinkUrl x &&
+				this.url == x.url &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.url?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
 	}
 }

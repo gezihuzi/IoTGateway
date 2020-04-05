@@ -168,6 +168,8 @@ namespace Waher.IoTGateway.App
 
 		private void Gateway_OnTerminate(object sender, EventArgs e)
 		{
+			Gateway.Stop().Wait();
+			Log.Terminate();
 			Window.Current.Close();
 		}
 
@@ -181,8 +183,7 @@ namespace Waher.IoTGateway.App
 				int.Parse(DatabaseConfig.Attributes["blockSize"].Value),
 				int.Parse(DatabaseConfig.Attributes["blocksInCache"].Value),
 				int.Parse(DatabaseConfig.Attributes["blobBlockSize"].Value), Encoding.UTF8,
-				int.Parse(DatabaseConfig.Attributes["timeoutMs"].Value),
-				false);
+				int.Parse(DatabaseConfig.Attributes["timeoutMs"].Value));
 
 			return Task.FromResult<IDatabaseProvider>(Result);
 		}
@@ -344,8 +345,7 @@ namespace Waher.IoTGateway.App
 		{
 			var deferral = e.SuspendingOperation.GetDeferral();
 
-			Gateway.Stop();
-			Log.Terminate();
+			Gateway.Terminate();
 
 			deferral.Complete();
 		}

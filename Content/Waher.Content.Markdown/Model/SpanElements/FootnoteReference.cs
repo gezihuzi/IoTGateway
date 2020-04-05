@@ -10,7 +10,7 @@ namespace Waher.Content.Markdown.Model.SpanElements
 	/// </summary>
 	public class FootnoteReference : MarkdownElement
 	{
-		private string key;
+		private readonly string key;
 
 		/// <summary>
 		/// Footnote reference
@@ -29,6 +29,17 @@ namespace Waher.Content.Markdown.Model.SpanElements
 		public string Key
 		{
 			get { return this.key; }
+		}
+
+		/// <summary>
+		/// Generates Markdown for the markdown element.
+		/// </summary>
+		/// <param name="Output">Markdown will be output here.</param>
+		public override void GenerateMarkdown(StringBuilder Output)
+		{
+			Output.Append("[^");
+			Output.Append(this.key);
+			Output.Append(']');
 		}
 
 		/// <summary>
@@ -131,5 +142,32 @@ namespace Waher.Content.Markdown.Model.SpanElements
 
 			Output.WriteEndElement();
 		}
+
+		/// <summary>
+		/// Determines whether the specified object is equal to the current object.
+		/// </summary>
+		/// <param name="obj">The object to compare with the current object.</param>
+		/// <returns>true if the specified object is equal to the current object; otherwise, false.</returns>
+		public override bool Equals(object obj)
+		{
+			return obj is FootnoteReference x &&
+				this.key == x.key &&
+				base.Equals(obj);
+		}
+
+		/// <summary>
+		/// Serves as the default hash function.
+		/// </summary>
+		/// <returns>A hash code for the current object.</returns>
+		public override int GetHashCode()
+		{
+			int h1 = base.GetHashCode();
+			int h2 = this.key?.GetHashCode() ?? 0;
+
+			h1 = ((h1 << 5) + h1) ^ h2;
+
+			return h1;
+		}
+
 	}
 }

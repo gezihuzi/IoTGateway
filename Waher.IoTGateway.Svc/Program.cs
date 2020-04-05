@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,12 +9,10 @@ using System.Xml;
 using Waher.Content;
 using Waher.Events;
 using Waher.Events.Console;
-using Waher.Networking.XMPP;
 using Waher.Networking.XMPP.Provisioning;
 using Waher.Persistence;
 using Waher.Persistence.Files;
 using Waher.Runtime.Inventory;
-using Waher.Runtime.Settings;
 using Waher.IoTGateway.Svc.ServiceManagement;
 using Waher.IoTGateway.Svc.ServiceManagement.Classes;
 using Waher.IoTGateway.Svc.ServiceManagement.Enumerations;
@@ -315,13 +314,15 @@ namespace Waher.IoTGateway.Svc
 			{
 				Log.Informational("Starting service.");
 
-				ServiceHost host = new ServiceHost(ServiceName);
-				host.Run();
+				using (GatewayService Service = new GatewayService(ServiceName))
+				{
+					ServiceBase.Run(Service);
+				}
 			}
 			catch (Exception ex)
 			{
 				Log.Critical(ex);
-				throw;
+				System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
 			}
 			finally
 			{
@@ -350,14 +351,14 @@ namespace Waher.IoTGateway.Svc
 
 				if (!Gateway.Start(true, true, instanceName).Result)
 				{
-					System.Console.Out.WriteLine();
-					System.Console.Out.WriteLine("Gateway being started in another process.");
+					Console.Out.WriteLine();
+					Console.Out.WriteLine("Gateway being started in another process.");
 					return;
 				}
 
 				ManualResetEvent Done = new ManualResetEvent(false);
 				Gateway.OnTerminate += (sender, e) => Done.Set();
-				Console.CancelKeyPress += (sender, e) => Done.Set();
+				Console.CancelKeyPress += (sender, e) => Gateway.Terminate();
 
 				try
 				{
@@ -369,7 +370,7 @@ namespace Waher.IoTGateway.Svc
 							case CtrlTypes.CTRL_CLOSE_EVENT:
 							case CtrlTypes.CTRL_C_EVENT:
 							case CtrlTypes.CTRL_SHUTDOWN_EVENT:
-								Done.Set();
+								Gateway.Terminate();
 								break;
 
 							case CtrlTypes.CTRL_LOGOFF_EVENT:
@@ -393,7 +394,8 @@ namespace Waher.IoTGateway.Svc
 			}
 			finally
 			{
-				Gateway.Stop();
+				Gateway.Stop().Wait();
+				Log.Terminate();
 			}
 		}
 
@@ -408,7 +410,7 @@ namespace Waher.IoTGateway.Svc
 				int.Parse(DatabaseConfig.Attributes["blocksInCache"].Value),
 				int.Parse(DatabaseConfig.Attributes["blobBlockSize"].Value), Encoding.UTF8,
 				int.Parse(DatabaseConfig.Attributes["timeoutMs"].Value),
-				Encrypted, false, true);
+				Encrypted, true);
 
 			return Task.FromResult<IDatabaseProvider>(Result);
 		}
@@ -430,7 +432,7 @@ namespace Waher.IoTGateway.Svc
 		private static void InstallService(string ServiceName, string DisplayName, string Description, ServiceStartType StartType, bool Immediate,
 			ServiceFailureActions FailureActions, Win32ServiceCredentials Credentials)
 		{
-			ServiceHost host = new ServiceHost(ServiceName);
+			ServiceInstaller host = new ServiceInstaller(ServiceName);
 			int i;
 
 			switch (i = host.Install(DisplayName, Description, StartType, Immediate, FailureActions, Credentials))
@@ -458,7 +460,7 @@ namespace Waher.IoTGateway.Svc
 
 		private static void UninstallService(string ServiceName)
 		{
-			ServiceHost host = new ServiceHost(ServiceName);
+			ServiceInstaller host = new ServiceInstaller(ServiceName);
 
 			if (host.Uninstall())
 				Console.Out.WriteLine("Service successfully uninstalled.");

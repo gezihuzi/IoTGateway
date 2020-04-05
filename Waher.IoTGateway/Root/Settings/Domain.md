@@ -2,10 +2,9 @@
 Description: Allows the user to configure domain settings.
 Date: 2018-05-28
 Author: Peter Waher
-Copyright: /Copyright.md
 Master: {{(Configuring:=Waher.IoTGateway.Gateway.Configuring) ? "Master.md" : "/Master.md"}}
 JavaScript: /Events.js
-JavaScript: /Calculator.js
+JavaScript: /Prompt.js
 JavaScript: /Settings/Domain.js
 JavaScript: /Settings/XMPP.js
 JavaScript: /Settings/Next.js

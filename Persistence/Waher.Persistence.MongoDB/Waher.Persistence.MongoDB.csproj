@@ -8,8 +8,8 @@
     <Company>Waher Data AB</Company>
     <Copyright>Copyright © Waher Data AB 2016-2020. All rights reserved.</Copyright>
     <NeutralLanguage>English</NeutralLanguage>
-    <AssemblyVersion>1.0.1</AssemblyVersion>
-    <FileVersion>1.0.1</FileVersion>
+    <AssemblyVersion>1.0.3</AssemblyVersion>
+    <FileVersion>1.0.3</FileVersion>
     <Authors>Peter Waher</Authors>
     <Product>Waher.IoTGateway</Product>
     <PackageLicenseUrl></PackageLicenseUrl>
@@ -19,7 +19,7 @@
     <RepositoryType>GitHub</RepositoryType>
     <PackageTags>persistence object database MongoDB</PackageTags>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <PackageIcon>Icon_64x64.png</PackageIcon>
   </PropertyGroup>
 
@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.10.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.8.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.10.2" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
